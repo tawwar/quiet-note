@@ -94,12 +94,6 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
-        externalNativeBuild {
-            cmake {
-                // Ensure Ninja is used and path max is high
-                arguments "-GNinja", "-DCMAKE_OBJECT_PATH_MAX=1024"
-            }
-        }
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }

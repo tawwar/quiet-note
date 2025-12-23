@@ -4,12 +4,21 @@ import { StyleSheet } from 'react-native';
 import { BookOpen, Calendar, Image as ImageIcon, Settings } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          ...styles.tabBar,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 8,
+        },
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textTertiary,
         tabBarLabelStyle: styles.tabLabel,
@@ -52,9 +61,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
-    height: 85,
-    paddingTop: 8,
-    paddingBottom: 28,
+    // Height will be handled dynamically in the component
   },
   tabLabel: {
     fontSize: 11,

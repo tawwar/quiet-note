@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { initializeDatabase, webStorage, isWeb, getDb } from '@/db/client';
 import * as schema from '@/db/schema';
-import { v4 as uuidv4 } from 'uuid';
+import * as Crypto from 'expo-crypto';
 
 interface DatabaseContextType {
   isReady: boolean;
@@ -127,13 +127,21 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
         setUserSettings({ ...userSettings, name, primaryGoal, onboardingCompleted: true, updatedAt: now });
       } else {
         const result = await db.insert(schema.userSettings).values({ name, primaryGoal, onboardingCompleted: true, createdAt: now, updatedAt: now }).returning();
-        setUserSettings(result[0]);
+        if (result && result.length > 0) {
+          setUserSettings(result[0]);
+        } else {
+          // Fallback if returning() is not supported or returns empty
+          const fetched = await db.select().from(schema.userSettings).limit(1);
+          if (fetched.length > 0) {
+            setUserSettings(fetched[0]);
+          }
+        }
       }
     }
   };
 
   const createEntry = async (entry: Omit<schema.NewJournalEntry, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const id = uuidv4();
+    const id = Crypto.randomUUID();
     const now = new Date().toISOString();
     const newEntry = { ...entry, id, createdAt: now, updatedAt: now, isFavorite: false };
 
@@ -236,7 +244,7 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addMedia = async (media: Omit<schema.NewEntryMedia, 'id' | 'createdAt'>) => {
-    const id = uuidv4();
+    const id = Crypto.randomUUID();
     const now = new Date().toISOString();
     const newMedia = { ...media, id, createdAt: now };
 
@@ -274,7 +282,7 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addChecklistItem = async (item: Omit<schema.NewChecklistItem, 'id'>) => {
-    const id = uuidv4();
+    const id = Crypto.randomUUID();
     const newItem = { ...item, id };
 
     if (isWeb) {
@@ -313,7 +321,7 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createAlbum = async (name: string) => {
-    const id = uuidv4();
+    const id = Crypto.randomUUID();
     const now = new Date().toISOString();
     const newAlbum = { id, name, coverImageUri: null, isPinned: false, createdAt: now, updatedAt: now };
 
