@@ -27,6 +27,7 @@ interface DatabaseContextType {
   getAllMedia: () => Promise<schema.EntryMedia[]>;
   refreshEntries: () => Promise<void>;
   refreshAlbums: () => Promise<void>;
+  getPagedMedia: (limit: number, offset: number, type?: 'image' | 'video') => Promise<schema.EntryMedia[]>;
 }
 
 const DatabaseContext = createContext<DatabaseContextType | null>(null);
@@ -375,6 +376,30 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const getPagedMedia = async (limit: number, offset: number, type?: 'image' | 'video') => {
+    if (isWeb) {
+      let filtered = [...mediaItems];
+      if (type) {
+        filtered = filtered.filter((m) => m.type === type);
+      }
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return filtered.slice(offset, offset + limit);
+    } else {
+      const db = getDb();
+      const { desc, eq } = require('drizzle-orm');
+      let query = db.select().from(schema.entryMedia);
+
+      if (type) {
+        query = query.where(eq(schema.entryMedia.type, type));
+      }
+
+      return await query
+        .orderBy(desc(schema.entryMedia.createdAt))
+        .limit(limit)
+        .offset(offset);
+    }
+  };
+
   return (
     <DatabaseContext.Provider
       value={{
@@ -401,6 +426,7 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
         getAllMedia,
         refreshEntries,
         refreshAlbums,
+        getPagedMedia,
       }}
     >
       {children}

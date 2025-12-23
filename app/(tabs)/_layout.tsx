@@ -3,7 +3,6 @@ import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { BookOpen, Calendar, Image as ImageIcon, Settings } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
@@ -17,7 +16,7 @@ export default function TabsLayout() {
           ...styles.tabBar,
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom,
-          paddingTop: 8,
+          paddingTop: 0,
         },
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textTertiary,
@@ -39,9 +38,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="albums"
+        name="gallery"
         options={{
-          title: 'Albums',
+          title: 'Gallery',
           tabBarIcon: ({ color, size }) => <ImageIcon size={size} color={color} />,
         }}
       />
@@ -61,7 +60,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
-    // Height will be handled dynamically in the component
+    height: 60,
+    paddingTop: 8,
   },
   tabLabel: {
     fontSize: 11,

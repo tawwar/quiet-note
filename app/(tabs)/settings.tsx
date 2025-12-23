@@ -11,7 +11,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   User,
@@ -37,6 +37,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { theme, themeMode, toggleTheme } = useTheme();
   const { userSettings, saveUserSettings, entries, albums } = useDatabase();
+  const insets = useSafeAreaInsets();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editName, setEditName] = useState(userSettings?.name || '');
@@ -107,19 +108,19 @@ export default function SettingsScreen() {
             setShowProfileModal(true);
           },
         },
-        {
-          icon: Bell,
-          label: 'Daily Reminder',
-          toggle: true,
-          value: dailyReminder,
-          onToggle: setDailyReminder,
-        },
-        {
-          icon: Lock,
-          label: 'App Lock',
-          subtitle: 'Require authentication to open',
-          onPress: () => Alert.alert('App Lock', 'This feature requires a native build with biometric authentication.'),
-        },
+        // {
+        //   icon: Bell,
+        //   label: 'Daily Reminder',
+        //   toggle: true,
+        //   value: dailyReminder,
+        //   onToggle: setDailyReminder,
+        // },
+        // {
+        //   icon: Lock,
+        //   label: 'App Lock',
+        //   subtitle: 'Require authentication to open',
+        //   onPress: () => Alert.alert('App Lock', 'This feature requires a native build with biometric authentication.'),
+        // },
       ],
     },
     {
@@ -300,8 +301,6 @@ export default function SettingsScreen() {
         <View style={styles.footer}>
           <Text style={dynamicStyles.footerText}>Your data stays privately on your device</Text>
         </View>
-
-        <View style={{ height: 100 }} />
       </ScrollView>
 
       <Modal

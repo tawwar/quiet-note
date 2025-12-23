@@ -10,11 +10,12 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Calendar, Search, MapPin, Play, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
 import { Colors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import * as schema from '@/db/schema';
 import FAB from '@/components/FAB';
 import MoodIcon from '@/components/MoodIcon';
 
@@ -35,41 +36,44 @@ interface DisplayEntry {
   audioDuration?: string;
 }
 
-const sampleEntries: DisplayEntry[] = [
-  {
-    id: '1',
-    title: 'Beach Day Adventure',
-    content: 'Today was absolutely incredible. The water was crystal clear and the sun...',
-    mood: 'happy',
-    location: 'Malibu, CA',
-    tags: ['travel', 'joy'],
-    createdAt: new Date().toISOString(),
-    image: 'https://images.pexels.com/photos/1032650/pexels-photo-1032650.jpeg?auto=compress&cs=tinysrgb&w=800',
-  },
-  {
-    id: '2',
-    title: 'Coffee with Sarah',
-    content: 'Finally caught up with Sarah! We talked for hours about her new job and the upcoming trip. The latte art was...',
-    mood: 'grateful',
-    tags: ['friends'],
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    emoji: 'coffee',
-  },
-  {
-    id: '3',
-    title: 'A bit anxious',
-    content: "Work has been piling up lately and I'm feeling the pressure. Took a moment...",
-    mood: 'anxious',
-    tags: ['personal'],
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-    hasAudio: true,
-    audioDuration: '0:45',
-  },
-];
+// const sampleEntries: DisplayEntry[] = [
+//   {
+//     id: '1',
+//     title: 'Beach Day Adventure',
+//     content: 'Today was absolutely incredible. The water was crystal clear and the sun...',
+//     mood: 'happy',
+//     location: 'Malibu, CA',
+//     tags: ['travel', 'joy'],
+//     createdAt: new Date().toISOString(),
+//     image: 'https://images.pexels.com/photos/1032650/pexels-photo-1032650.jpeg?auto=compress&cs=tinysrgb&w=800',
+//   },
+//   {
+//     id: '2',
+//     title: 'Coffee with Sarah',
+//     content: 'Finally caught up with Sarah! We talked for hours about her new job and the upcoming trip. The latte art was...',
+//     mood: 'grateful',
+//     tags: ['friends'],
+//     createdAt: new Date(Date.now() - 86400000).toISOString(),
+//     emoji: 'coffee',
+//   },
+//   {
+//     id: '3',
+//     title: 'A bit anxious',
+//     content: "Work has been piling up lately and I'm feeling the pressure. Took a moment...",
+//     mood: 'anxious',
+//     tags: ['personal'],
+//     createdAt: new Date(Date.now() - 172800000).toISOString(),
+//     hasAudio: true,
+//     audioDuration: '0:45',
+//   },
+// ];
+const sampleEntries: DisplayEntry[] = [];
 
 export default function JournalTimelineScreen() {
   const router = useRouter();
-  const { entries, searchEntries } = useDatabase();
+  const { entries, searchEntries, getAllMedia } = useDatabase();
+  const insets = useSafeAreaInsets();
+  const [media, setMedia] = useState<schema.EntryMedia[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const today = new Date();
@@ -93,10 +97,15 @@ export default function JournalTimelineScreen() {
         try {
           const results = await searchEntries(searchQuery);
           setSearchResults(
-            results.map((e) => ({
-              ...e,
-              tags: e.tags ? JSON.parse(e.tags) : null,
-            }))
+            results.map((e) => {
+              const entryMedia = media.find((m) => m.entryId === e.id && (m.type === 'image' || m.type === 'video'));
+              return {
+                ...e,
+                tags: e.tags ? JSON.parse(e.tags) : null,
+                image: entryMedia?.uri,
+                createdAt: e.createdAt,
+              };
+            })
           );
         } catch (error) {
           console.warn('Search error:', error);
@@ -113,15 +122,26 @@ export default function JournalTimelineScreen() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, searchEntries]);
 
+  useFocusEffect(
+    useCallback(() => {
+      getAllMedia().then(setMedia);
+    }, [getAllMedia])
+  );
+
   const allEntries: DisplayEntry[] = useMemo(() => {
     if (entries.length > 0) {
-      return entries.map((e) => ({
-        ...e,
-        tags: e.tags ? JSON.parse(e.tags) : null,
-      }));
+      return entries.map((e) => {
+        const entryMedia = media.find((m) => m.entryId === e.id && (m.type === 'image' || m.type === 'video'));
+        return {
+          ...e,
+          tags: e.tags ? JSON.parse(e.tags) : null,
+          image: entryMedia?.uri,
+          createdAt: e.createdAt,
+        };
+      });
     }
     return sampleEntries;
-  }, [entries]);
+  }, [entries, media]);
 
   const filteredEntries = useMemo(() => {
     if (!selectedDate) {
@@ -359,7 +379,7 @@ export default function JournalTimelineScreen() {
 
                       {'image' in entry && entry.image && (
                         <View style={styles.entryImageContainer}>
-                          <Image source={{ uri: entry.image }} style={styles.entryImage} />
+                          <Image source={{ uri: entry.image }} style={styles.entryImage} resizeMode="cover" />
                           {entry.location && (
                             <View style={styles.locationBadge}>
                               <MapPin size={12} color={Colors.white} />
@@ -416,11 +436,9 @@ export default function JournalTimelineScreen() {
             </Text>
           </View>
         )}
-
-        <View style={{ height: 100 }} />
       </ScrollView>
 
-      <FAB onPress={handleNewEntry} style={styles.fab} />
+      <FAB onPress={handleNewEntry} style={{ position: 'absolute', bottom: 24, right: 24, marginBottom: 0 }} />
 
       <Modal
         visible={showSearchModal}
@@ -809,7 +827,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 100,
     right: 24,
   },
   searchModalContainer: {

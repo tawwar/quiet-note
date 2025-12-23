@@ -9,7 +9,9 @@ import {
   Image,
   Modal,
   Platform,
+  TouchableWithoutFeedback,
 } from 'react-native';
+import { Video, ResizeMode } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -25,6 +27,7 @@ import {
   Smile,
   Plus,
   Trash2,
+  Play,
 } from 'lucide-react-native';
 import { Colors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
@@ -66,6 +69,7 @@ export default function EntryEditorScreen() {
   const [checklist, setChecklist] = useState<ChecklistItemType[]>([]);
   const [media, setMedia] = useState<any[]>([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
+  const [fullScreenMedia, setFullScreenMedia] = useState<{ uri: string; type: string } | null>(null);
 
   const isNewEntry = id === 'new';
 
@@ -161,7 +165,7 @@ export default function EntryEditorScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable onPress={handleClose} style={styles.closeButton}>
           <X size={24} color={Colors.text} />
@@ -219,8 +223,27 @@ export default function EntryEditorScreen() {
         />
 
         {media.length > 0 && media[0].uri && (
-          <View style={styles.mediaContainer}>
-            <Image source={{ uri: media[0].uri }} style={styles.mediaImage} />
+          <Pressable
+            style={styles.mediaContainer}
+            onPress={() => setFullScreenMedia({ uri: media[0].uri, type: media[0].type || 'image' })}
+          >
+            {media[0].type === 'video' ? (
+              <View style={styles.videoThumbnailContainer}>
+                <Video
+                  source={{ uri: media[0].uri }}
+                  style={styles.mediaImage}
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay={false}
+                  isMuted={true}
+                />
+                <View style={styles.playIconOverlay}>
+                  <Play size={32} color={Colors.white} fill={Colors.white} />
+                </View>
+              </View>
+            ) : (
+              <Image source={{ uri: media[0].uri }} style={styles.mediaImage} />
+            )}
+
             {(media[0].caption || media[0].time) && (
               <View style={styles.mediaCaptionContainer}>
                 <Text style={styles.mediaCaption}>
@@ -228,7 +251,7 @@ export default function EntryEditorScreen() {
                 </Text>
               </View>
             )}
-          </View>
+          </Pressable>
         )}
 
         {checklist.length > 0 && (
@@ -292,7 +315,38 @@ export default function EntryEditorScreen() {
           <Mic size={22} color={Colors.text} />
         </Pressable>
       </View>
-    </SafeAreaView>
+
+      <Modal
+        visible={!!fullScreenMedia}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setFullScreenMedia(null)}
+      >
+        <View style={styles.fullScreenContainer}>
+          <Pressable style={styles.fullScreenCloseButton} onPress={() => setFullScreenMedia(null)}>
+            <X size={30} color={Colors.white} />
+          </Pressable>
+          <View style={styles.fullScreenContent}>
+            {fullScreenMedia?.type === 'video' ? (
+              <Video
+                source={{ uri: fullScreenMedia.uri }}
+                style={styles.fullScreenVideo}
+                useNativeControls
+                resizeMode={ResizeMode.CONTAIN}
+                shouldPlay
+                isLooping
+              />
+            ) : (
+              <Image
+                source={{ uri: fullScreenMedia?.uri }}
+                style={styles.fullScreenImage}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView >
   );
 }
 
@@ -469,5 +523,44 @@ const styles = StyleSheet.create({
   },
   toolButtonActive: {
     backgroundColor: Colors.surfaceSecondary,
+  },
+  videoThumbnailContainer: {
+    width: '100%',
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 12,
+    borderRadius: 30,
+  },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 10,
+  },
+  fullScreenContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  fullScreenVideo: {
+    width: '100%',
+    height: '100%',
   },
 });

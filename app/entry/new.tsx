@@ -207,7 +207,7 @@ export default function NewEntryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable onPress={handleCancel}>
           <Text style={styles.cancelText}>Cancel</Text>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
@@ -9,6 +9,26 @@ import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 function RootLayoutNav() {
   const { isReady, userSettings } = useDatabase();
   const { theme, themeMode } = useTheme();
+  const router = useRouter();
+  const segments = useSegments();
+  const [hasNavigated, setHasNavigated] = useState(false);
+
+  // Navigate to the correct screen after database loads
+  useEffect(() => {
+    if (!isReady || hasNavigated) return;
+
+    const onboardingCompleted = userSettings?.onboardingCompleted || false;
+    const inAuthGroup = segments[0] === 'onboarding';
+
+    // Navigate to tabs if onboarding is completed, or to onboarding if not
+    if (onboardingCompleted && inAuthGroup) {
+      router.replace('/(tabs)');
+      setHasNavigated(true);
+    } else if (!onboardingCompleted && !inAuthGroup) {
+      router.replace('/onboarding');
+      setHasNavigated(true);
+    }
+  }, [isReady, userSettings, segments, hasNavigated, router]);
 
   if (!isReady) {
     return (
@@ -18,14 +38,9 @@ function RootLayoutNav() {
     );
   }
 
-  const initialRouteName = userSettings?.onboardingCompleted ? '(tabs)' : 'onboarding';
-
   return (
     <>
-      <Stack
-        screenOptions={{ headerShown: false }}
-        initialRouteName={initialRouteName}
-      >
+      <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
