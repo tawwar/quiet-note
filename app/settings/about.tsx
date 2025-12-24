@@ -124,7 +124,7 @@ export default function AboutScreen() {
           </Text>
         </View>
 
-        <View style={dynamicStyles.sectionCard}>
+        {/* <View style={dynamicStyles.sectionCard}>
           <Text style={dynamicStyles.sectionTitle}>Links</Text>
           <Pressable style={dynamicStyles.featureCard}>
             <View style={dynamicStyles.iconContainer}>
@@ -135,7 +135,7 @@ export default function AboutScreen() {
               <Text style={dynamicStyles.featureText}>View the source code and contribute</Text>
             </View>
           </Pressable>
-        </View>
+        </View> */}
 
         <Text style={dynamicStyles.footer}>
           Made with care for journaling enthusiasts{'\n'}

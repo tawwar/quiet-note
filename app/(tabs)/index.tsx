@@ -39,7 +39,7 @@ interface DisplayEntry {
 // const sampleEntries: DisplayEntry[] = [
 //   {
 //     id: '1',
-//     title: 'Beach Day Adventure',
+//     title: 'Beach Day Adventure with Shyma',
 //     content: 'Today was absolutely incredible. The water was crystal clear and the sun...',
 //     mood: 'happy',
 //     location: 'Malibu, CA',
@@ -49,7 +49,7 @@ interface DisplayEntry {
 //   },
 //   {
 //     id: '2',
-//     title: 'Coffee with Sarah',
+//     title: 'Coffee with Dina',
 //     content: 'Finally caught up with Sarah! We talked for hours about her new job and the upcoming trip. The latte art was...',
 //     mood: 'grateful',
 //     tags: ['friends'],

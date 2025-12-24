@@ -7,7 +7,7 @@
     "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "quietnote",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -29,15 +29,24 @@
     },
     "android": {
       "package": "com.tawwar.quietnote"
-      // "adaptiveIcon": {
-      //   "foregroundImage": "./assets/images/adaptive-icon.png",
-      //   "backgroundColor": "#ffffff"
-      // }
     },
     "splash": {
       "image": "./assets/images/splash-icon.png",
-      "resizeMode": "cover",
-      "backgroundColor": "#ffffff"
+      "resizeMode": "contain",
+      "imageWidth": 200,
+      "backgroundColor": "#F8FAFC",
+      "dark": {
+        "image": "./assets/images/splash-icon.png",
+        "resizeMode": "contain",
+        "imageWidth": 200,
+        "backgroundColor": "#0F172A"
+      }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "41fdb0f1-5246-485a-9545-d9bcbdf804c0"
+      }
     }
   }
 }

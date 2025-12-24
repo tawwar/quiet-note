@@ -7,6 +7,11 @@ import { DatabaseProvider, useDatabase } from '@/context/DatabaseContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import * as SplashScreen from 'expo-splash-screen';
 
+// Set the splash screen animation options. This is optional.
+SplashScreen.setOptions({
+  duration: 1000,
+  fade: true,
+});
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync().catch(() => { });
 
