@@ -28,15 +28,15 @@
       "typedRoutes": true
     },
     "android": {
-      "package": "com.tawwar.quietnote",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+      "package": "com.tawwar.quietnote"
+      // "adaptiveIcon": {
+      //   "foregroundImage": "./assets/images/adaptive-icon.png",
+      //   "backgroundColor": "#ffffff"
+      // }
     },
     "splash": {
       "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
+      "resizeMode": "cover",
       "backgroundColor": "#ffffff"
     }
   }
