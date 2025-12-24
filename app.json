@@ -2,7 +2,9 @@
   "expo": {
     "name": "QuietNote",
     "slug": "quiet-note",
+    "description": "A private, offline journal appfor reflection, mood tracking, and idea capture.",
     "version": "1.0.0",
+    "sdkVersion": "54.0.30",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -26,7 +28,7 @@
       "typedRoutes": true
     },
     "android": {
-      "package": "com.anonymous.boltexponativewind"
+      "package": "com.tawwar.quietnote"
     }
   }
 }
