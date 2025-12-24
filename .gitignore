@@ -1,6 +1,11 @@
 # dependencies
 node_modules/
 
+
+# tawwar
+.bolt/
+.media/
+
 # expo
 .expo/
 dist/
@@ -33,7 +38,3 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
-
-# tawwar
-.media/
-.bolt/
