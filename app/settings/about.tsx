@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, Heart, Shield, Lock, Palette } from 'lucide-react-native';
+import { ArrowLeft, Heart, Shield, Lock, Palette, Github } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 
@@ -13,10 +14,9 @@ export default function AboutScreen() {
   const dynamicStyles = {
     container: { ...styles.container, backgroundColor: theme.background },
     headerTitle: { ...styles.headerTitle, color: theme.text },
-    logoContainer: { ...styles.logoContainer, backgroundColor: theme.primary },
-    logoText: { ...styles.logoText, color: theme.white },
+    logoGradient: { ...styles.logoGradient },
+    logoImage: { ...styles.logoImage },
     appName: { ...styles.appName, color: theme.text },
-    version: { ...styles.version, color: theme.textSecondary },
     sectionCard: { ...styles.sectionCard, backgroundColor: theme.surface },
     sectionTitle: { ...styles.sectionTitle, color: theme.text },
     sectionText: { ...styles.sectionText, color: theme.textSecondary },
@@ -25,6 +25,18 @@ export default function AboutScreen() {
     featureTitle: { ...styles.featureTitle, color: theme.text },
     featureText: { ...styles.featureText, color: theme.textSecondary },
     footer: { ...styles.footer, color: theme.textTertiary },
+    versionBadge: {
+      backgroundColor: theme.surfaceSecondary,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: Spacing.xs / 2,
+      borderRadius: BorderRadius.full,
+      marginTop: Spacing.xs,
+    },
+    versionText: {
+      color: theme.primary,
+      fontSize: FontSizes.xs,
+      fontWeight: FontWeights.bold,
+    },
   };
 
   const features = [
@@ -57,16 +69,27 @@ export default function AboutScreen() {
           <ArrowLeft size={24} color={theme.text} />
         </Pressable>
         <Text style={dynamicStyles.headerTitle}>About</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.logoSection}>
-          <View style={dynamicStyles.logoContainer}>
-            <Text style={dynamicStyles.logoText}>J</Text>
-          </View>
+          <LinearGradient
+            colors={[theme.primary, theme.primaryDark || theme.primary]}
+            style={dynamicStyles.logoGradient}
+          >
+            <View style={styles.logoContainerInner}>
+              <Image
+                source={require('../../assets/images/icon.png')}
+                style={dynamicStyles.logoImage}
+                resizeMode="contain"
+              />
+            </View>
+          </LinearGradient>
           <Text style={dynamicStyles.appName}>Quiet Note</Text>
-          <Text style={dynamicStyles.version}>Version 1.0.0</Text>
+          <View style={dynamicStyles.versionBadge}>
+            <Text style={dynamicStyles.versionText}>v1.0.0</Text>
+          </View>
         </View>
 
         <View style={dynamicStyles.sectionCard}>
@@ -99,6 +122,19 @@ export default function AboutScreen() {
           <Text style={dynamicStyles.sectionText}>
             This app is built with modern technologies including React Native. We believe in transparency and user privacy above all else.
           </Text>
+        </View>
+
+        <View style={dynamicStyles.sectionCard}>
+          <Text style={dynamicStyles.sectionTitle}>Links</Text>
+          <Pressable style={dynamicStyles.featureCard}>
+            <View style={dynamicStyles.iconContainer}>
+              <Github size={20} color={theme.primary} />
+            </View>
+            <View style={styles.featureContent}>
+              <Text style={dynamicStyles.featureTitle}>GitHub Repository</Text>
+              <Text style={dynamicStyles.featureText}>View the source code and contribute</Text>
+            </View>
+          </Pressable>
         </View>
 
         <Text style={dynamicStyles.footer}>
@@ -140,30 +176,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.xl,
   },
-  logoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  logoGradient: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    padding: 3,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.md,
+    ...Shadows.md,
   },
-  logoText: {
-    fontSize: 40,
-    fontWeight: FontWeights.bold,
+  logoContainerInner: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 65,
+    height: 65,
   },
   appName: {
-    fontSize: FontSizes.xxl,
+    fontSize: FontSizes.xxxl,
     fontWeight: FontWeights.bold,
-    marginBottom: Spacing.xs,
-  },
-  version: {
-    fontSize: FontSizes.md,
+    marginBottom: 0,
   },
   sectionCard: {
     padding: Spacing.lg,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
     ...Shadows.sm,
   },
   sectionTitle: {

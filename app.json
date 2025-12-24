@@ -4,7 +4,7 @@
     "slug": "quiet-note",
     "description": "A private, offline journal appfor reflection, mood tracking, and idea capture.",
     "version": "1.0.0",
-    "sdkVersion": "54.0.30",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
@@ -28,7 +28,16 @@
       "typedRoutes": true
     },
     "android": {
-      "package": "com.tawwar.quietnote"
+      "package": "com.tawwar.quietnote",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     }
   }
 }

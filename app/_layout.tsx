@@ -5,6 +5,10 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { DatabaseProvider, useDatabase } from '@/context/DatabaseContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
+import * as SplashScreen from 'expo-splash-screen';
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync().catch(() => { });
 
 function RootLayoutNav() {
   const { isReady, userSettings } = useDatabase();
@@ -30,12 +34,15 @@ function RootLayoutNav() {
     }
   }, [isReady, userSettings, segments, hasNavigated, router]);
 
+  // Hide splash screen when database is ready
+  useEffect(() => {
+    if (isReady) {
+      SplashScreen.hideAsync().catch(() => { });
+    }
+  }, [isReady]);
+
   if (!isReady) {
-    return (
-      <View style={[styles.loading, { backgroundColor: theme.background }]}>
-        <ActivityIndicator size="large" color={theme.primary} />
-      </View>
-    );
+    return null;
   }
 
   return (
