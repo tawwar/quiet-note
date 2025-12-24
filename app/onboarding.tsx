@@ -72,7 +72,7 @@ export default function OnboardingScreen() {
           </View>
 
           <View style={styles.content}>
-            <Text style={styles.title}>Your Safe Space.</Text>
+            <Text style={styles.title}>Quiet Note</Text>
             <Text style={styles.subtitle}>
               A private place to untangle your thoughts and capture your days.
             </Text>

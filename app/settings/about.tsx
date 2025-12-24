@@ -65,14 +65,14 @@ export default function AboutScreen() {
           <View style={dynamicStyles.logoContainer}>
             <Text style={dynamicStyles.logoText}>J</Text>
           </View>
-          <Text style={dynamicStyles.appName}>Personal Journal</Text>
+          <Text style={dynamicStyles.appName}>Quiet Note</Text>
           <Text style={dynamicStyles.version}>Version 1.0.0</Text>
         </View>
 
         <View style={dynamicStyles.sectionCard}>
           <Text style={dynamicStyles.sectionTitle}>About This App</Text>
           <Text style={dynamicStyles.sectionText}>
-            Personal Journal is a private, secure journaling app designed to help you capture your daily thoughts, memories, and experiences. Whether you want to track your mood, organize photos, or simply write down your reflections, this app provides a safe space for your personal expression.
+            Quiet Note is a private, secure journaling app designed to help you capture your daily thoughts, memories, and experiences. Whether you want to track your mood, organize photos, or simply write down your reflections, this app provides a safe space for your personal expression.
           </Text>
         </View>
 
@@ -97,13 +97,13 @@ export default function AboutScreen() {
         <View style={dynamicStyles.sectionCard}>
           <Text style={dynamicStyles.sectionTitle}>Open Source</Text>
           <Text style={dynamicStyles.sectionText}>
-            This app is built with modern technologies including React Native, Expo, and TypeScript. We believe in transparency and user privacy above all else.
+            This app is built with modern technologies including React Native. We believe in transparency and user privacy above all else.
           </Text>
         </View>
 
         <Text style={dynamicStyles.footer}>
           Made with care for journaling enthusiasts{'\n'}
-          © 2024 Personal Journal
+          © 2025 QuietNote
         </Text>
 
         <View style={{ height: 100 }} />
