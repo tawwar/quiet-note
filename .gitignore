@@ -6,8 +6,8 @@ node_modules/
 .bolt
 .media
 
-android/
-iOS/
+# android/
+# iOS/
 
 # expo
 .expo/
