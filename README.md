@@ -212,7 +212,7 @@ This project is released under the **MIT License**. See [LICENSE](./LICENSE) for
 ## Maintainer / Contact ✉️
 - **Maintainer/X:** [Hossam Darwish](https://www.x.com/hossdar)
 - **Email:** `apps@tawwar.com`  
-- **Website:** [tawwar.com](https://www.tawwar.com)
+- **Website:** [tawwar.com](https://tawwar.com)
 ---
 
 Thank you for using and contributing to QuietNote — a small, private place to write. ❤️
