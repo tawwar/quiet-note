@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import {
     Image as ImageIcon,
     Video as VideoIcon,
@@ -20,8 +20,9 @@ import {
     X,
     Grid3X3,
 } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius, FontSizes, FontWeights } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSizes, FontWeights } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 import * as schema from '@/db/schema';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -33,6 +34,8 @@ type FilterType = 'all' | 'image' | 'video';
 
 export default function GalleryScreen() {
     const router = useRouter();
+    const { theme } = useTheme();
+    const styles = useMemo(() => getStyles(theme), [theme]);
     const { getPagedMedia } = useDatabase();
     const insets = useSafeAreaInsets();
 
@@ -42,6 +45,17 @@ export default function GalleryScreen() {
     const [filter, setFilter] = useState<FilterType>('all');
     const [page, setPage] = useState(0);
     const [fullScreenMedia, setFullScreenMedia] = useState<{ uri: string; type: string } | null>(null);
+
+    // Video player for full-screen
+    const fullScreenVideoPlayer = useVideoPlayer(
+        fullScreenMedia?.type === 'video' ? fullScreenMedia.uri : '',
+        (player) => {
+            if (fullScreenMedia?.type === 'video') {
+                player.play();
+                player.loop = true;
+            }
+        }
+    );
 
     const fetchMedia = async (pageNum: number, currentFilter: FilterType, reset: boolean = false) => {
         if (loading || (!hasMore && !reset)) return;
@@ -92,15 +106,9 @@ export default function GalleryScreen() {
             <View style={styles.mediaContainer}>
                 {item.type === 'video' ? (
                     <View style={styles.videoThumbnailContainer}>
-                        <Video
-                            source={{ uri: item.uri }}
-                            style={styles.thumbnail}
-                            resizeMode={ResizeMode.COVER}
-                            shouldPlay={false}
-                            isMuted={true}
-                        />
+                        <Image source={{ uri: item.uri }} style={styles.thumbnail} />
                         <View style={styles.playIconOverlay}>
-                            <Play size={20} color={Colors.white} fill={Colors.white} />
+                            <Play size={20} color={theme.white} fill={theme.white} />
                         </View>
                     </View>
                 ) : (
@@ -122,21 +130,21 @@ export default function GalleryScreen() {
                     style={[styles.filterChip, filter === 'all' && styles.filterChipActive]}
                     onPress={() => setFilter('all')}
                 >
-                    <Grid3X3 size={16} color={filter === 'all' ? Colors.white : Colors.textSecondary} />
+                    <Grid3X3 size={16} color={filter === 'all' ? theme.white : theme.textSecondary} />
                     <Text style={[styles.filterText, filter === 'all' && styles.filterTextActive]}>All</Text>
                 </Pressable>
                 <Pressable
                     style={[styles.filterChip, filter === 'image' && styles.filterChipActive]}
                     onPress={() => setFilter('image')}
                 >
-                    <ImageIcon size={16} color={filter === 'image' ? Colors.white : Colors.textSecondary} />
+                    <ImageIcon size={16} color={filter === 'image' ? theme.white : theme.textSecondary} />
                     <Text style={[styles.filterText, filter === 'image' && styles.filterTextActive]}>Pictures</Text>
                 </Pressable>
                 <Pressable
                     style={[styles.filterChip, filter === 'video' && styles.filterChipActive]}
                     onPress={() => setFilter('video')}
                 >
-                    <VideoIcon size={16} color={filter === 'video' ? Colors.white : Colors.textSecondary} />
+                    <VideoIcon size={16} color={filter === 'video' ? theme.white : theme.textSecondary} />
                     <Text style={[styles.filterText, filter === 'video' && styles.filterTextActive]}>Videos</Text>
                 </Pressable>
             </View>
@@ -153,14 +161,14 @@ export default function GalleryScreen() {
                 ListFooterComponent={
                     loading ? (
                         <View style={styles.loader}>
-                            <ActivityIndicator size="small" color={Colors.primary} />
+                            <ActivityIndicator size="small" color={theme.primary} />
                         </View>
                     ) : null
                 }
                 ListEmptyComponent={
                     !loading ? (
                         <View style={styles.emptyState}>
-                            <ImageIcon size={48} color={Colors.textTertiary} />
+                            <ImageIcon size={48} color={theme.textTertiary} />
                             <Text style={styles.emptyText}>No media found</Text>
                         </View>
                     ) : null
@@ -175,17 +183,15 @@ export default function GalleryScreen() {
             >
                 <View style={styles.fullScreenContainer}>
                     <Pressable style={styles.fullScreenCloseButton} onPress={() => setFullScreenMedia(null)}>
-                        <X size={30} color={Colors.white} />
+                        <X size={30} color={theme.white} />
                     </Pressable>
                     <View style={styles.fullScreenContent}>
                         {fullScreenMedia?.type === 'video' ? (
-                            <Video
-                                source={{ uri: fullScreenMedia.uri }}
+                            <VideoView
+                                player={fullScreenVideoPlayer}
                                 style={styles.fullScreenVideo}
-                                useNativeControls
-                                resizeMode={ResizeMode.CONTAIN}
-                                shouldPlay
-                                isLooping
+                                contentFit="contain"
+                                nativeControls={true}
                             />
                         ) : (
                             <Image
@@ -201,10 +207,10 @@ export default function GalleryScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background,
+        backgroundColor: theme.background,
     },
     header: {
         paddingHorizontal: Spacing.lg,
@@ -213,11 +219,11 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: FontWeights.bold,
-        color: Colors.text,
+        color: theme.text,
     },
     subtitle: {
         fontSize: FontSizes.sm,
-        color: Colors.textSecondary,
+        color: theme.textSecondary,
     },
     filters: {
         flexDirection: 'row',
@@ -232,21 +238,21 @@ const styles = StyleSheet.create({
         paddingHorizontal: Spacing.md,
         paddingVertical: Spacing.sm,
         borderRadius: BorderRadius.full,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.white,
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: theme.border,
     },
     filterChipActive: {
-        backgroundColor: Colors.primary,
-        borderColor: Colors.primary,
+        backgroundColor: theme.primary,
+        borderColor: theme.primary,
     },
     filterText: {
         fontSize: FontSizes.sm,
-        color: Colors.textSecondary,
+        color: theme.textSecondary,
         fontWeight: FontWeights.medium,
     },
     filterTextActive: {
-        color: Colors.white,
+        color: theme.white,
     },
     grid: {
         padding: Spacing.lg,
@@ -260,7 +266,7 @@ const styles = StyleSheet.create({
         height: ITEM_WIDTH,
         borderRadius: BorderRadius.md,
         overflow: 'hidden',
-        backgroundColor: Colors.surfaceSecondary,
+        backgroundColor: theme.surfaceSecondary,
     },
     mediaContainer: {
         flex: 1,
@@ -293,7 +299,7 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: FontSizes.md,
-        color: Colors.textSecondary,
+        color: theme.textSecondary,
     },
     fullScreenContainer: {
         flex: 1,
@@ -323,3 +329,4 @@ const styles = StyleSheet.create({
         height: '100%',
     },
 });
+

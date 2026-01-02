@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { BookOpen, Calendar, Image as ImageIcon, Settings } from 'lucide-react-native';
-import { Colors } from '@/constants/theme';
+import { LightColors, DarkColors } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function TabsLayout() {
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const styles = useMemo(() => getStyles(theme), [theme]);
 
   return (
     <Tabs
@@ -18,8 +21,8 @@ export default function TabsLayout() {
           paddingBottom: insets.bottom,
           paddingTop: 0,
         },
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textTertiary,
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textTertiary,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -27,39 +30,39 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Journal',
-          tabBarIcon: ({ color, size }) => <BookOpen size={size} color={color} />,
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <BookOpen size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
           title: 'Calendar',
-          tabBarIcon: ({ color, size }) => <Calendar size={size} color={color} />,
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <Calendar size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="gallery"
         options={{
           title: 'Gallery',
-          tabBarIcon: ({ color, size }) => <ImageIcon size={size} color={color} />,
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <ImageIcon size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
+          tabBarIcon: ({ color, size }: { color: string; size: number }) => <Settings size={size} color={color} />,
         }}
       />
     </Tabs>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   tabBar: {
-    backgroundColor: Colors.white,
+    backgroundColor: theme.white,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopColor: theme.borderLight,
     height: 60,
     paddingTop: 8,
   },
@@ -68,3 +71,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+

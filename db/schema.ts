@@ -29,6 +29,9 @@ export const entryMedia = sqliteTable('entry_media', {
   uri: text('uri').notNull(),
   caption: text('caption'),
   timestamp: text('timestamp'),
+  width: integer('width'),
+  height: integer('height'),
+  duration: integer('duration'),
   order: integer('order').default(0),
   createdAt: text('created_at').notNull(),
 });

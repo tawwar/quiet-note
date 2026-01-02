@@ -87,6 +87,9 @@ export async function initializeDatabase() {
         caption TEXT,
         timestamp TEXT,
         "order" INTEGER DEFAULT 0,
+        width INTEGER,
+        height INTEGER,
+        duration INTEGER,
         created_at TEXT NOT NULL,
         FOREIGN KEY (entry_id) REFERENCES journal_entries(id) ON DELETE CASCADE
       );
@@ -118,6 +121,17 @@ export async function initializeDatabase() {
         FOREIGN KEY (media_id) REFERENCES entry_media(id) ON DELETE CASCADE
       );
     `);
+
+    // Migration for existing tables
+    try {
+      await expoDb.execAsync(`
+        ALTER TABLE entry_media ADD COLUMN width INTEGER;
+        ALTER TABLE entry_media ADD COLUMN height INTEGER;
+        ALTER TABLE entry_media ADD COLUMN duration INTEGER;
+      `);
+    } catch (e) {
+      // Ignore errors if columns already exist
+    }
 
     return true;
   } catch (error) {

@@ -9,8 +9,9 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 import MoodIcon from '@/components/MoodIcon';
 
 const MONTHS = [
@@ -22,6 +23,8 @@ const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme), [theme]);
   const { entries } = useDatabase();
   const insets = useSafeAreaInsets();
   const today = new Date();
@@ -130,13 +133,13 @@ export default function CalendarScreen() {
 
       <View style={styles.monthSelector}>
         <Pressable onPress={goToPreviousMonth} style={styles.navButton}>
-          <ChevronLeft size={24} color={Colors.text} />
+          <ChevronLeft size={24} color={theme.text} />
         </Pressable>
         <Text style={styles.monthText}>
           {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
         </Text>
         <Pressable onPress={goToNextMonth} style={styles.navButton}>
-          <ChevronRight size={24} color={Colors.text} />
+          <ChevronRight size={24} color={theme.text} />
         </Pressable>
       </View>
 
@@ -203,10 +206,10 @@ export default function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: theme.background,
   },
   header: {
     flexDirection: 'row',
@@ -218,18 +221,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
+    color: theme.text,
   },
   todayButton: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
+    backgroundColor: theme.primary,
   },
   todayButtonText: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.medium,
-    color: Colors.white,
+    color: theme.white,
   },
   monthSelector: {
     flexDirection: 'row',
@@ -244,10 +247,10 @@ const styles = StyleSheet.create({
   monthText: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
+    color: theme.text,
   },
   calendarContainer: {
-    backgroundColor: Colors.white,
+    backgroundColor: theme.white,
     marginHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
@@ -264,7 +267,7 @@ const styles = StyleSheet.create({
   },
   weekDayText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    color: theme.textSecondary,
     fontWeight: FontWeights.medium,
   },
   daysGrid: {
@@ -278,37 +281,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dayCellToday: {
-    backgroundColor: Colors.surfaceSecondary,
+    backgroundColor: theme.surfaceSecondary,
     borderRadius: BorderRadius.full,
     borderWidth: 2,
-    borderColor: Colors.primary,
+    borderColor: theme.primary,
   },
   dayCellSelected: {
-    backgroundColor: Colors.primary,
+    backgroundColor: theme.primary,
     borderRadius: BorderRadius.full,
     borderWidth: 0,
   },
   dayText: {
     fontSize: FontSizes.md,
-    color: Colors.text,
+    color: theme.text,
   },
   dayTextToday: {
-    color: Colors.primary,
+    color: theme.primary,
     fontWeight: FontWeights.semibold,
   },
   dayTextSelected: {
-    color: Colors.white,
+    color: theme.white,
     fontWeight: FontWeights.semibold,
   },
   entryDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.primary,
+    backgroundColor: theme.primary,
     marginTop: 2,
   },
   entryDotToday: {
-    backgroundColor: Colors.primary,
+    backgroundColor: theme.primary,
   },
   entriesList: {
     flex: 1,
@@ -324,11 +327,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
+    color: theme.text,
   },
   clearFilterText: {
     fontSize: FontSizes.sm,
-    color: Colors.primary,
+    color: theme.primary,
     fontWeight: FontWeights.medium,
   },
   emptyState: {
@@ -337,18 +340,18 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
+    color: theme.textSecondary,
     marginBottom: Spacing.xs,
   },
   emptySubtext: {
     fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
+    color: theme.textTertiary,
   },
   entryItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.white,
+    backgroundColor: theme.white,
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.sm,
@@ -360,11 +363,12 @@ const styles = StyleSheet.create({
   entryTitle: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.medium,
-    color: Colors.text,
+    color: theme.text,
     marginBottom: 2,
   },
   entryDate: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    color: theme.textSecondary,
   },
 });
+
