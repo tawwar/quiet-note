@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { Bold, Italic, Underline, Strikethrough, List, ListOrdered } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius } from '@/constants/theme';
+import { Spacing, BorderRadius } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 import type { OnChangeStateEvent } from 'react-native-enriched';
 
 interface FormattingToolbarProps {
@@ -23,6 +24,8 @@ export default function FormattingToolbar({
   onBulletList,
   onOrderedList,
 }: FormattingToolbarProps) {
+  const { theme } = useTheme();
+
   const ToolButton = ({
     onPress,
     isActive,
@@ -33,7 +36,10 @@ export default function FormattingToolbar({
     children: React.ReactNode;
   }) => (
     <Pressable
-      style={[styles.toolButton, isActive && styles.toolButtonActive]}
+      style={[
+        styles.toolButton,
+        isActive && { backgroundColor: theme.surfaceSecondary },
+      ]}
       onPress={onPress}
     >
       {children}
@@ -41,25 +47,25 @@ export default function FormattingToolbar({
   );
 
   return (
-    <View style={styles.toolbar}>
+    <View style={[styles.toolbar, { backgroundColor: theme.surface, borderTopColor: theme.borderLight }]}>
       <ToolButton onPress={onBold} isActive={stylesState?.isBold}>
-        <Bold size={22} color={stylesState?.isBold ? Colors.primary : Colors.text} />
+        <Bold size={22} color={stylesState?.isBold ? theme.primary : theme.text} />
       </ToolButton>
       <ToolButton onPress={onItalic} isActive={stylesState?.isItalic}>
-        <Italic size={22} color={stylesState?.isItalic ? Colors.primary : Colors.text} />
+        <Italic size={22} color={stylesState?.isItalic ? theme.primary : theme.text} />
       </ToolButton>
       <ToolButton onPress={onUnderline} isActive={stylesState?.isUnderline}>
-        <Underline size={22} color={stylesState?.isUnderline ? Colors.primary : Colors.text} />
+        <Underline size={22} color={stylesState?.isUnderline ? theme.primary : theme.text} />
       </ToolButton>
       <ToolButton onPress={onStrikethrough} isActive={stylesState?.isStrikeThrough}>
-        <Strikethrough size={22} color={stylesState?.isStrikeThrough ? Colors.primary : Colors.text} />
+        <Strikethrough size={22} color={stylesState?.isStrikeThrough ? theme.primary : theme.text} />
       </ToolButton>
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: theme.border }]} />
       <ToolButton onPress={onBulletList} isActive={stylesState?.isUnorderedList}>
-        <List size={22} color={stylesState?.isUnorderedList ? Colors.primary : Colors.text} />
+        <List size={22} color={stylesState?.isUnorderedList ? theme.primary : theme.text} />
       </ToolButton>
       <ToolButton onPress={onOrderedList} isActive={stylesState?.isOrderedList}>
-        <ListOrdered size={22} color={stylesState?.isOrderedList ? Colors.primary : Colors.text} />
+        <ListOrdered size={22} color={stylesState?.isOrderedList ? theme.primary : theme.text} />
       </ToolButton>
     </View>
   );
@@ -71,22 +77,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.white,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
   },
   toolButton: {
     padding: Spacing.sm,
     marginHorizontal: 2,
     borderRadius: BorderRadius.sm,
   },
-  toolButtonActive: {
-    backgroundColor: Colors.surfaceSecondary,
-  },
   divider: {
     width: 1,
     height: 24,
-    backgroundColor: Colors.border,
     marginHorizontal: Spacing.sm,
   },
 });

@@ -13,8 +13,9 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Calendar, Search, MapPin, Play, ChevronLeft, ChevronRight, X } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 import * as schema from '@/db/schema';
 import FAB from '@/components/FAB';
 import MoodIcon from '@/components/MoodIcon';
@@ -88,6 +89,7 @@ const sampleEntries: DisplayEntry[] = [];
 
 export default function JournalTimelineScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { entries, searchEntries, getAllMedia } = useDatabase();
   const insets = useSafeAreaInsets();
   const [media, setMedia] = useState<schema.EntryMedia[]>([]);
@@ -280,23 +282,23 @@ export default function JournalTimelineScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <View style={styles.header}>
         <Pressable style={styles.calendarButton}>
-          <Calendar size={24} color={Colors.text} />
+          <Calendar size={24} color={theme.text} />
         </Pressable>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{currentMonthYear}</Text>
-          <Text style={styles.headerSubtitle}>My Journal</Text>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>{currentMonthYear}</Text>
+          <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>My Journal</Text>
         </View>
         <Pressable style={styles.searchButton} onPress={() => setShowSearchModal(true)}>
-          <Search size={24} color={Colors.text} />
+          <Search size={24} color={theme.text} />
         </Pressable>
       </View>
 
-      <View style={styles.weekNavigation}>
+      <View style={[styles.weekNavigation, { backgroundColor: theme.surface, borderBottomColor: theme.borderLight }]}>
         <Pressable style={styles.weekNavButton} onPress={handlePreviousWeek}>
-          <ChevronLeft size={20} color={Colors.textSecondary} />
+          <ChevronLeft size={20} color={theme.textSecondary} />
         </Pressable>
         <View style={styles.weekStrip}>
           {weekDates.map((date, index) => {
@@ -307,22 +309,24 @@ export default function JournalTimelineScreen() {
                 key={index}
                 style={[
                   styles.dayItem,
-                  isSelected && styles.dayItemSelected,
-                  isTodayDate && !isSelected && styles.dayItemToday,
+                  isSelected && { backgroundColor: theme.primary },
+                  isTodayDate && !isSelected && { borderWidth: 1, borderColor: theme.primary },
                 ]}
                 onPress={() => handleDateSelect(date)}
               >
                 <Text style={[
                   styles.dayName,
-                  isSelected && styles.dayNameSelected,
-                  isTodayDate && !isSelected && styles.dayNameToday,
+                  { color: theme.textSecondary },
+                  isSelected && { color: theme.white },
+                  isTodayDate && !isSelected && { color: theme.primary },
                 ]}>
                   {WEEK_DAYS[date.getDay()]}
                 </Text>
                 <Text style={[
                   styles.dayNumber,
-                  isSelected && styles.dayNumberSelected,
-                  isTodayDate && !isSelected && styles.dayNumberToday,
+                  { color: theme.text },
+                  isSelected && { color: theme.white },
+                  isTodayDate && !isSelected && { color: theme.primary },
                 ]}>
                   {date.getDate().toString().padStart(2, '0')}
                 </Text>
@@ -331,17 +335,17 @@ export default function JournalTimelineScreen() {
           })}
         </View>
         <Pressable style={styles.weekNavButton} onPress={handleNextWeek}>
-          <ChevronRight size={20} color={Colors.textSecondary} />
+          <ChevronRight size={20} color={theme.textSecondary} />
         </Pressable>
       </View>
 
       {selectedDate && (
-        <View style={styles.filterBadge}>
-          <Text style={styles.filterBadgeText}>
+        <View style={[styles.filterBadge, { backgroundColor: theme.surfaceSecondary }]}>
+          <Text style={[styles.filterBadgeText, { color: theme.textSecondary }]}>
             Showing entries for {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </Text>
           <Pressable onPress={() => setSelectedDate(null)}>
-            <Text style={styles.clearFilterText}>Show All</Text>
+            <Text style={[styles.clearFilterText, { color: theme.primary }]}>Show All</Text>
           </Pressable>
         </View>
       )}
@@ -354,8 +358,8 @@ export default function JournalTimelineScreen() {
       >
         {Object.keys(groupedEntries).length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>No entries yet</Text>
-            <Text style={styles.emptyStateText}>
+            <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No entries yet</Text>
+            <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>
               {selectedDate
                 ? 'No entries for this day. Tap + to create one!'
                 : 'Start journaling by tapping the + button below'}
@@ -371,26 +375,26 @@ export default function JournalTimelineScreen() {
                     <View style={styles.timelineSidebar}>
                       {index === 0 && (
                         <>
-                          <Text style={styles.sidebarDay}>{dayInfo.day}</Text>
-                          <Text style={styles.sidebarDate}>{dayInfo.date}</Text>
+                          <Text style={[styles.sidebarDay, { color: theme.textSecondary }]}>{dayInfo.day}</Text>
+                          <Text style={[styles.sidebarDate, { color: theme.text }]}>{dayInfo.date}</Text>
                         </>
                       )}
                       <View style={styles.timelineLine}>
-                        <View style={styles.timelineDot} />
-                        {index < dateEntries.length - 1 && <View style={styles.lineSegment} />}
+                        <View style={[styles.timelineDot, { backgroundColor: theme.primary }]} />
+                        {index < dateEntries.length - 1 && <View style={[styles.lineSegment, { backgroundColor: theme.border }]} />}
                       </View>
                     </View>
 
                     <Pressable
-                      style={styles.entryCard}
+                      style={[styles.entryCard, { backgroundColor: theme.surface }]}
                       onPress={() => handleEntryPress(entry.id)}
                     >
                       <View style={styles.entryHeader}>
-                        <Text style={styles.entryTitle}>{entry.title}</Text>
+                        <Text style={[styles.entryTitle, { color: theme.text }]}>{entry.title}</Text>
                         <MoodIcon mood={entry.mood || 'neutral'} size={28} />
                       </View>
 
-                      <Text style={styles.entryContent} numberOfLines={2}>
+                      <Text style={[styles.entryContent, { color: theme.textSecondary }]} numberOfLines={2}>
                         {stripHtmlTags(entry.content)}
                       </Text>
 
@@ -399,29 +403,29 @@ export default function JournalTimelineScreen() {
                           <Image source={{ uri: entry.image }} style={styles.entryImage} resizeMode="cover" />
                           {entry.location && (
                             <View style={styles.locationBadge}>
-                              <MapPin size={12} color={Colors.white} />
-                              <Text style={styles.locationText}>{entry.location}</Text>
+                              <MapPin size={12} color={theme.white} />
+                              <Text style={[styles.locationText, { color: theme.white }]}>{entry.location}</Text>
                             </View>
                           )}
                         </View>
                       )}
 
                       {'hasAudio' in entry && entry.hasAudio && (
-                        <View style={styles.audioPlayer}>
-                          <Play size={16} color={Colors.primary} />
-                          <View style={styles.audioProgress}>
-                            <View style={styles.audioProgressFill} />
+                        <View style={[styles.audioPlayer, { backgroundColor: theme.surfaceSecondary }]}>
+                          <Play size={16} color={theme.primary} />
+                          <View style={[styles.audioProgress, { backgroundColor: theme.border }]}>
+                            <View style={[styles.audioProgressFill, { backgroundColor: theme.primary }]} />
                           </View>
-                          <Text style={styles.audioDuration}>{entry.audioDuration}</Text>
+                          <Text style={[styles.audioDuration, { color: theme.textSecondary }]}>{entry.audioDuration}</Text>
                         </View>
                       )}
 
                       <View style={styles.entryFooter}>
-                        <Text style={styles.entryTime}>{formatTime(entry.createdAt)}</Text>
+                        <Text style={[styles.entryTime, { color: theme.primary }]}>{formatTime(entry.createdAt)}</Text>
                         <View style={styles.tags}>
                           {entry.tags?.map((tag: string) => (
-                            <View key={tag} style={styles.tag}>
-                              <Text style={styles.tagText}>#{tag}</Text>
+                            <View key={tag} style={[styles.tag, { backgroundColor: theme.surfaceSecondary }]}>
+                              <Text style={[styles.tagText, { color: theme.textSecondary }]}>#{tag}</Text>
                             </View>
                           ))}
                         </View>
@@ -436,19 +440,19 @@ export default function JournalTimelineScreen() {
 
         {isLoadingMore && (
           <View style={styles.loadingMore}>
-            <ActivityIndicator size="small" color={Colors.primary} />
-            <Text style={styles.loadingMoreText}>Loading more entries...</Text>
+            <ActivityIndicator size="small" color={theme.primary} />
+            <Text style={[styles.loadingMoreText, { color: theme.textSecondary }]}>Loading more entries...</Text>
           </View>
         )}
 
         {!hasMoreEntries && displayedEntries.length > 0 && (
           <View style={styles.timelineEnd}>
             <View style={styles.timelineEndDots}>
-              <View style={styles.endDot} />
-              <View style={styles.endDot} />
-              <View style={styles.endDot} />
+              <View style={[styles.endDot, { backgroundColor: theme.border }]} />
+              <View style={[styles.endDot, { backgroundColor: theme.border }]} />
+              <View style={[styles.endDot, { backgroundColor: theme.border }]} />
             </View>
-            <Text style={styles.timelineEndText}>
+            <Text style={[styles.timelineEndText, { color: theme.textTertiary }]}>
               {selectedDate ? 'End of entries for this day' : 'End of journal'}
             </Text>
           </View>
@@ -462,46 +466,46 @@ export default function JournalTimelineScreen() {
         animationType="slide"
         onRequestClose={() => setShowSearchModal(false)}
       >
-        <SafeAreaView style={styles.searchModalContainer} edges={['top']}>
+        <SafeAreaView style={[styles.searchModalContainer, { backgroundColor: theme.background }]} edges={['top']}>
           <View style={styles.searchHeader}>
-            <View style={styles.searchInputContainer}>
-              <Search size={20} color={Colors.textTertiary} />
+            <View style={[styles.searchInputContainer, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <Search size={20} color={theme.textTertiary} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { color: theme.text }]}
                 placeholder="Search journal entries..."
-                placeholderTextColor={Colors.textTertiary}
+                placeholderTextColor={theme.textTertiary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 autoFocus
               />
               {searchQuery.length > 0 && (
                 <Pressable onPress={handleClearSearch}>
-                  <X size={20} color={Colors.textTertiary} />
+                  <X size={20} color={theme.textTertiary} />
                 </Pressable>
               )}
             </View>
             <Pressable onPress={() => setShowSearchModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={[styles.cancelText, { color: theme.primary }]}>Cancel</Text>
             </Pressable>
           </View>
 
           {isSearching ? (
             <View style={styles.searchLoadingContainer}>
-              <ActivityIndicator size="large" color={Colors.primary} />
-              <Text style={styles.searchLoadingText}>Searching...</Text>
+              <ActivityIndicator size="large" color={theme.primary} />
+              <Text style={[styles.searchLoadingText, { color: theme.textSecondary }]}>Searching...</Text>
             </View>
           ) : searchQuery.length === 0 ? (
             <View style={styles.searchEmptyContainer}>
-              <Search size={48} color={Colors.textTertiary} />
-              <Text style={styles.searchEmptyTitle}>Search Your Journal</Text>
-              <Text style={styles.searchEmptyText}>
+              <Search size={48} color={theme.textTertiary} />
+              <Text style={[styles.searchEmptyTitle, { color: theme.text }]}>Search Your Journal</Text>
+              <Text style={[styles.searchEmptyText, { color: theme.textSecondary }]}>
                 Find entries by title, content, tags, or mood
               </Text>
             </View>
           ) : searchResults.length === 0 ? (
             <View style={styles.searchEmptyContainer}>
-              <Text style={styles.searchEmptyTitle}>No Results</Text>
-              <Text style={styles.searchEmptyText}>
+              <Text style={[styles.searchEmptyTitle, { color: theme.text }]}>No Results</Text>
+              <Text style={[styles.searchEmptyText, { color: theme.textSecondary }]}>
                 No entries found for "{searchQuery}"
               </Text>
             </View>
@@ -510,7 +514,7 @@ export default function JournalTimelineScreen() {
               {searchResults.map((entry) => (
                 <Pressable
                   key={entry.id}
-                  style={styles.searchResultItem}
+                  style={[styles.searchResultItem, { backgroundColor: theme.surface }]}
                   onPress={() => {
                     setShowSearchModal(false);
                     handleEntryPress(entry.id);
@@ -518,10 +522,10 @@ export default function JournalTimelineScreen() {
                 >
                   <View style={styles.searchResultHeader}>
                     <View style={styles.searchResultTitleRow}>
-                      <Text style={styles.searchResultTitle}>{entry.title}</Text>
+                      <Text style={[styles.searchResultTitle, { color: theme.text }]}>{entry.title}</Text>
                       <MoodIcon mood={entry.mood || 'neutral'} size={24} />
                     </View>
-                    <Text style={styles.searchResultDate}>
+                    <Text style={[styles.searchResultDate, { color: theme.textSecondary }]}>
                       {new Date(entry.createdAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -530,15 +534,15 @@ export default function JournalTimelineScreen() {
                     </Text>
                   </View>
                   {entry.content && (
-                    <Text style={styles.searchResultContent} numberOfLines={2}>
+                    <Text style={[styles.searchResultContent, { color: theme.textSecondary }]} numberOfLines={2}>
                       {stripHtmlTags(entry.content)}
                     </Text>
                   )}
                   {entry.tags && entry.tags.length > 0 && (
                     <View style={styles.searchResultTags}>
                       {entry.tags.slice(0, 3).map((tag: string) => (
-                        <View key={tag} style={styles.searchResultTag}>
-                          <Text style={styles.searchResultTagText}>#{tag}</Text>
+                        <View key={tag} style={[styles.searchResultTag, { backgroundColor: theme.surfaceSecondary }]}>
+                          <Text style={[styles.searchResultTagText, { color: theme.textSecondary }]}>#{tag}</Text>
                         </View>
                       ))}
                     </View>
@@ -556,7 +560,6 @@ export default function JournalTimelineScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -574,11 +577,9 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
   },
   headerSubtitle: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
   },
   searchButton: {
     padding: Spacing.xs,
@@ -586,9 +587,7 @@ const styles = StyleSheet.create({
   weekNavigation: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
     paddingVertical: Spacing.xs,
   },
   weekNavButton: {
@@ -606,50 +605,26 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
     marginHorizontal: 2,
   },
-  dayItemSelected: {
-    backgroundColor: Colors.primary,
-  },
-  dayItemToday: {
-    borderWidth: 1,
-    borderColor: Colors.primary,
-  },
   dayName: {
     fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
     marginBottom: 4,
-  },
-  dayNameSelected: {
-    color: Colors.white,
-  },
-  dayNameToday: {
-    color: Colors.primary,
   },
   dayNumber: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
-  },
-  dayNumberSelected: {
-    color: Colors.white,
-  },
-  dayNumberToday: {
-    color: Colors.primary,
   },
   filterBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surfaceSecondary,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
   },
   filterBadgeText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
   },
   clearFilterText: {
     fontSize: FontSizes.sm,
-    color: Colors.primary,
     fontWeight: FontWeights.medium,
   },
   timeline: {
@@ -669,13 +644,11 @@ const styles = StyleSheet.create({
   },
   sidebarDay: {
     fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
     marginBottom: 2,
   },
   sidebarDate: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
     marginBottom: Spacing.sm,
   },
   timelineLine: {
@@ -686,17 +659,14 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.primary,
   },
   lineSegment: {
     width: 2,
     flex: 1,
-    backgroundColor: Colors.border,
     marginTop: 4,
   },
   entryCard: {
     flex: 1,
-    backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.md,
@@ -712,13 +682,11 @@ const styles = StyleSheet.create({
   entryTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
     flex: 1,
     marginRight: Spacing.sm,
   },
   entryContent: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
     lineHeight: 22,
     marginBottom: Spacing.sm,
   },
@@ -745,12 +713,10 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: FontSizes.xs,
-    color: Colors.white,
   },
   audioPlayer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceSecondary,
     padding: Spacing.sm,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.sm,
@@ -759,18 +725,15 @@ const styles = StyleSheet.create({
   audioProgress: {
     flex: 1,
     height: 4,
-    backgroundColor: Colors.border,
     borderRadius: 2,
   },
   audioProgressFill: {
     width: '30%',
     height: '100%',
-    backgroundColor: Colors.primary,
     borderRadius: 2,
   },
   audioDuration: {
     fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
   },
   entryFooter: {
     flexDirection: 'row',
@@ -779,7 +742,6 @@ const styles = StyleSheet.create({
   },
   entryTime: {
     fontSize: FontSizes.sm,
-    color: Colors.primary,
     fontWeight: FontWeights.medium,
   },
   tags: {
@@ -787,14 +749,12 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   tag: {
-    backgroundColor: Colors.surfaceSecondary,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,
   },
   tagText: {
     fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
   },
   emptyState: {
     alignItems: 'center',
@@ -804,12 +764,10 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
     marginBottom: Spacing.sm,
   },
   emptyStateText: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
   },
   loadingMore: {
@@ -821,7 +779,6 @@ const styles = StyleSheet.create({
   },
   loadingMoreText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
   },
   timelineEnd: {
     alignItems: 'center',
@@ -836,11 +793,9 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.border,
   },
   timelineEndText: {
     fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
   },
   fab: {
     position: 'absolute',
@@ -849,7 +804,6 @@ const styles = StyleSheet.create({
   },
   searchModalContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   searchHeader: {
     flexDirection: 'row',
@@ -862,23 +816,19 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   searchInput: {
     flex: 1,
     fontSize: FontSizes.md,
-    color: Colors.text,
     marginLeft: Spacing.sm,
     paddingVertical: Spacing.xs,
   },
   cancelText: {
     fontSize: FontSizes.md,
-    color: Colors.primary,
     fontWeight: FontWeights.medium,
   },
   searchLoadingContainer: {
@@ -889,7 +839,6 @@ const styles = StyleSheet.create({
   },
   searchLoadingText: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
   },
   searchEmptyContainer: {
     flex: 1,
@@ -900,20 +849,17 @@ const styles = StyleSheet.create({
   searchEmptyTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
     marginTop: Spacing.md,
     marginBottom: Spacing.sm,
   },
   searchEmptyText: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
   },
   searchResults: {
     flex: 1,
   },
   searchResultItem: {
-    backgroundColor: Colors.white,
     marginHorizontal: Spacing.lg,
     marginVertical: Spacing.xs,
     padding: Spacing.md,
@@ -932,17 +878,14 @@ const styles = StyleSheet.create({
   searchResultTitle: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
     flex: 1,
     marginRight: Spacing.sm,
   },
   searchResultDate: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
   },
   searchResultContent: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
     lineHeight: 20,
     marginBottom: Spacing.xs,
   },
@@ -952,13 +895,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   searchResultTag: {
-    backgroundColor: Colors.surfaceSecondary,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: BorderRadius.full,
   },
   searchResultTagText: {
     fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
   },
 });

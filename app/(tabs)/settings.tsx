@@ -42,8 +42,8 @@ export default function SettingsScreen() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [editName, setEditName] = useState(userSettings?.name || '');
   const [editGoal, setEditGoal] = useState(userSettings?.primaryGoal || 'Journaling');
-  const [notifications, setNotifications] = useState(true);
-  const [dailyReminder, setDailyReminder] = useState(true);
+  // const [notifications, setNotifications] = useState(true);
+  // const [dailyReminder, setDailyReminder] = useState(true);
   const [autoBackup, setAutoBackup] = useState(false);
 
   const goals = ['Mindfulness', 'Gratitude', 'Journaling', 'Clarity', 'Self-Reflection', 'Creativity'];
@@ -133,19 +133,19 @@ export default function SettingsScreen() {
           value: themeMode === 'dark',
           onToggle: toggleTheme,
         },
-        {
-          icon: Bell,
-          label: 'Push Notifications',
-          toggle: true,
-          value: notifications,
-          onToggle: setNotifications,
-        },
-        {
-          icon: ImageIcon,
-          label: 'Default Photo Quality',
-          subtitle: 'High quality',
-          onPress: () => Alert.alert('Photo Quality', 'Photos are saved in high quality (80%).'),
-        },
+        // {
+        //   icon: Bell,
+        //   label: 'Push Notifications',
+        //   toggle: true,
+        //   value: notifications,
+        //   onToggle: setNotifications,
+        // },
+        // {
+        //   icon: ImageIcon,
+        //   label: 'Default Photo Quality',
+        //   subtitle: 'High quality',
+        //   onPress: () => Alert.alert('Photo Quality', 'Photos are saved in high quality (80%).'),
+        // },
       ],
     },
     {

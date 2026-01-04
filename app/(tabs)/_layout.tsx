@@ -2,11 +2,12 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { BookOpen, Calendar, Image as ImageIcon, Settings } from 'lucide-react-native';
-import { Colors } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
 
   return (
     <Tabs
@@ -14,12 +15,14 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: {
           ...styles.tabBar,
+          backgroundColor: theme.surface,
+          borderTopColor: theme.borderLight,
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom,
           paddingTop: 0,
         },
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textTertiary,
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textTertiary,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -57,9 +60,7 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: Colors.white,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
     height: 60,
     paddingTop: 8,
   },

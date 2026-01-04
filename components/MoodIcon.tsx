@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
 import { Smile, Frown, Meh, Sun, Cloud, CloudRain, Zap, Heart, Sparkles, Coffee } from 'lucide-react-native';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 interface MoodIconProps {
   mood: string;
@@ -27,14 +26,13 @@ const weatherIcons: Record<string, { icon: React.FC<any>; color: string }> = {
 };
 
 export default function MoodIcon({ mood, size = 24, color }: MoodIconProps) {
+  const { theme } = useTheme();
   const moodData = moodIcons[mood.toLowerCase()] || weatherIcons[mood.toLowerCase()];
 
   if (!moodData) {
-    return <Smile size={size} color={color || Colors.textSecondary} />;
+    return <Smile size={size} color={color || theme.textSecondary} />;
   }
 
   const IconComponent = moodData.icon;
   return <IconComponent size={size} color={color || moodData.color} />;
 }
-
-const styles = StyleSheet.create({});

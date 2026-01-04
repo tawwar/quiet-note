@@ -1,8 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { Colors, BorderRadius, FontSizes, Spacing } from '@/constants/theme';
+import { BorderRadius, FontSizes } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 import MoodIcon from './MoodIcon';
-import { MapPin, Hash } from 'lucide-react-native';
+import { MapPin } from 'lucide-react-native';
 
 interface TagProps {
   label: string;
@@ -14,6 +15,7 @@ interface TagProps {
 }
 
 export default function Tag({ label, type = 'tag', icon, selected, onPress, variant = 'outlined' }: TagProps) {
+  const { theme } = useTheme();
   const isFilled = variant === 'filled' || selected;
 
   const renderIcon = () => {
@@ -21,16 +23,20 @@ export default function Tag({ label, type = 'tag', icon, selected, onPress, vari
       return <MoodIcon mood={icon || label} size={16} />;
     }
     if (type === 'location') {
-      return <MapPin size={14} color={isFilled ? Colors.white : Colors.textSecondary} />;
+      return <MapPin size={14} color={isFilled ? theme.white : theme.textSecondary} />;
     }
     return null;
   };
 
   return (
     <Pressable onPress={onPress}>
-      <View style={[styles.container, isFilled && styles.filled]}>
+      <View style={[
+        styles.container,
+        { borderColor: theme.border, backgroundColor: theme.surface },
+        isFilled && { backgroundColor: theme.surfaceSecondary, borderColor: theme.surfaceSecondary },
+      ]}>
         {renderIcon()}
-        <Text style={[styles.label, isFilled && styles.labelFilled]}>{label}</Text>
+        <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
       </View>
     </Pressable>
   );
@@ -45,18 +51,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.white,
-  },
-  filled: {
-    backgroundColor: Colors.surfaceSecondary,
-    borderColor: Colors.surfaceSecondary,
   },
   label: {
     fontSize: FontSizes.sm,
-    color: Colors.text,
-  },
-  labelFilled: {
-    color: Colors.text,
   },
 });

@@ -31,8 +31,9 @@ import {
   Meh,
   Play,
 } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius, FontSizes, FontWeights } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSizes, FontWeights } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 import FAB from '@/components/FAB';
 import RichTextEditor, { RichTextEditorRef } from '@/components/RichTextEditor';
 import FormattingToolbar from '@/components/FormattingToolbar';
@@ -62,6 +63,7 @@ const INPUT_ACCESSORY_VIEW_ID = 'editRichTextToolbar';
 
 export default function EntryEditorScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getEntryById, updateEntry, getEntryMedia, deleteMedia, addMedia } = useDatabase();
   const editorRef = useRef<RichTextEditorRef>(null);
@@ -321,32 +323,40 @@ export default function EntryEditorScreen() {
     <View style={styles.mainContainer}>
       <View style={styles.header}>
         <Pressable onPress={handleClose}>
-          <Text style={styles.cancelText}>Cancel</Text>
+          <Text style={[styles.cancelText, { color: theme.text }]}>Cancel</Text>
         </Pressable>
         <View style={styles.headerCenter}>
-          <Text style={styles.dateText}>{dateStr}</Text>
-          <Text style={styles.timeText}>{timeStr}</Text>
+          <Text style={[styles.dateText, { color: theme.text }]}>{dateStr}</Text>
+          <Text style={[styles.timeText, { color: theme.textSecondary }]}>{timeStr}</Text>
         </View>
-        <Pressable style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveText}>Save</Text>
+        <Pressable style={[styles.saveButton, { backgroundColor: theme.primary }]} onPress={handleSave}>
+          <Text style={[styles.saveText, { color: theme.white }]}>Save</Text>
         </Pressable>
       </View>
 
       <View style={styles.tagsRow}>
-        <Pressable style={styles.tagButton} onPress={() => setShowTagInput(true)}>
-          <Hash size={16} color={Colors.textSecondary} />
-          <Text style={styles.tagButtonText}>ADD TAG</Text>
+        <Pressable style={[styles.tagButton, { borderColor: theme.border }]} onPress={() => setShowTagInput(true)}>
+          <Hash size={16} color={theme.textSecondary} />
+          <Text style={[styles.tagButtonText, { color: theme.textSecondary }]}>ADD TAG</Text>
         </Pressable>
         <Pressable
-          style={[styles.tagButton, mood && styles.tagButtonActive]}
+          style={[
+            styles.tagButton,
+            { borderColor: theme.border },
+            mood && { borderColor: theme.primary, borderStyle: 'solid', backgroundColor: '#E0F7F5' },
+          ]}
           onPress={() => setShowMoodPicker(true)}
         >
           {selectedMood ? (
             <selectedMood.icon size={16} color={selectedMood.color} />
           ) : (
-            <Smile size={16} color={Colors.textSecondary} />
+            <Smile size={16} color={theme.textSecondary} />
           )}
-          <Text style={[styles.tagButtonText, mood && styles.tagButtonTextActive]}>
+          <Text style={[
+            styles.tagButtonText,
+            { color: theme.textSecondary },
+            mood && { color: theme.primary },
+          ]}>
             {selectedMood ? selectedMood.label.toUpperCase() : 'ADD EMOTION'}
           </Text>
         </Pressable>
@@ -355,9 +365,9 @@ export default function EntryEditorScreen() {
       {tags.length > 0 && (
         <View style={styles.selectedTags}>
           {tags.map((tag) => (
-            <Pressable key={tag} style={styles.selectedTag} onPress={() => handleRemoveTag(tag)}>
-              <Text style={styles.selectedTagText}>#{tag}</Text>
-              <X size={14} color={Colors.textSecondary} />
+            <Pressable key={tag} style={[styles.selectedTag, { backgroundColor: theme.surfaceSecondary }]} onPress={() => handleRemoveTag(tag)}>
+              <Text style={[styles.selectedTagText, { color: theme.text }]}>#{tag}</Text>
+              <X size={14} color={theme.textSecondary} />
             </Pressable>
           ))}
         </View>
@@ -365,9 +375,9 @@ export default function EntryEditorScreen() {
 
       <View style={styles.titleContainer}>
         <TextInput
-          style={styles.titleInput}
+          style={[styles.titleInput, { color: theme.text }]}
           placeholder="Title your day..."
-          placeholderTextColor={Colors.textTertiary}
+          placeholderTextColor={theme.textTertiary}
           value={title}
           onChangeText={setTitle}
           multiline
@@ -399,11 +409,11 @@ export default function EntryEditorScreen() {
               <Image source={{ uri: item.uri }} style={styles.mediaImage} />
               {item.type === 'video' && (
                 <View style={styles.videoOverlay}>
-                  <Play size={24} color={Colors.white} fill={Colors.white} />
+                  <Play size={24} color={theme.white} fill={theme.white} />
                 </View>
               )}
               <Pressable style={styles.removeMediaButton} onPress={() => handleRemoveMedia(index)}>
-                <X size={16} color={Colors.white} />
+                <X size={16} color={theme.white} />
               </Pressable>
             </Pressable>
           ))}
@@ -415,7 +425,7 @@ export default function EntryEditorScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       {Platform.OS === 'ios' ? (
         <>
           {renderContent()}
@@ -437,18 +447,18 @@ export default function EntryEditorScreen() {
         onRequestClose={() => setShowFabMenu(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setShowFabMenu(false)}>
-          <Pressable style={styles.fabMenu} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[styles.fabMenu, { backgroundColor: theme.surface }]} onPress={(e) => e.stopPropagation()}>
             <Pressable style={styles.fabMenuItem} onPress={handleCamera}>
-              <View style={styles.fabMenuIcon}>
-                <Camera size={24} color={Colors.primary} />
+              <View style={[styles.fabMenuIcon, { backgroundColor: theme.surfaceSecondary }]}>
+                <Camera size={24} color={theme.primary} />
               </View>
-              <Text style={styles.fabMenuText}>Take Photo/Video</Text>
+              <Text style={[styles.fabMenuText, { color: theme.text }]}>Take Photo/Video</Text>
             </Pressable>
             <Pressable style={styles.fabMenuItem} onPress={handleGallery}>
-              <View style={styles.fabMenuIcon}>
-                <Images size={24} color={Colors.primary} />
+              <View style={[styles.fabMenuIcon, { backgroundColor: theme.surfaceSecondary }]}>
+                <Images size={24} color={theme.primary} />
               </View>
-              <Text style={styles.fabMenuText}>Choose from Gallery</Text>
+              <Text style={[styles.fabMenuText, { color: theme.text }]}>Choose from Gallery</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -461,8 +471,8 @@ export default function EntryEditorScreen() {
         onRequestClose={() => setShowMoodPicker(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setShowMoodPicker(false)}>
-          <Pressable style={styles.moodPicker} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.moodPickerTitle}>How are you feeling?</Text>
+          <Pressable style={[styles.moodPicker, { backgroundColor: theme.surface }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.moodPickerTitle, { color: theme.text }]}>How are you feeling?</Text>
             <View style={styles.moodGrid}>
               {moods.map((m) => {
                 const IconComponent = m.icon;
@@ -470,15 +480,23 @@ export default function EntryEditorScreen() {
                 return (
                   <Pressable
                     key={m.id}
-                    style={[styles.moodItem, isSelected && styles.moodItemSelected]}
+                    style={[
+                      styles.moodItem,
+                      { backgroundColor: theme.surfaceSecondary },
+                      isSelected && { backgroundColor: '#E0F7F5', borderWidth: 1, borderColor: theme.primary },
+                    ]}
                     onPress={() => handleSelectMood(m.id)}
                   >
                     <IconComponent
                       size={28}
-                      color={isSelected ? m.color : Colors.textSecondary}
+                      color={isSelected ? m.color : theme.textSecondary}
                     />
                     <Text
-                      style={[styles.moodLabel, isSelected && { color: m.color, fontWeight: FontWeights.medium }]}
+                      style={[
+                        styles.moodLabel,
+                        { color: theme.textSecondary },
+                        isSelected && { color: m.color, fontWeight: FontWeights.medium },
+                      ]}
                     >
                       {m.label}
                     </Text>
@@ -497,12 +515,12 @@ export default function EntryEditorScreen() {
         onRequestClose={() => setShowTagInput(false)}
       >
         <Pressable style={styles.tagModalOverlay} onPress={() => setShowTagInput(false)}>
-          <Pressable style={styles.tagInputModal} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.tagInputTitle}>Add a tag</Text>
+          <Pressable style={[styles.tagInputModal, { backgroundColor: theme.surface }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.tagInputTitle, { color: theme.text }]}>Add a tag</Text>
             <TextInput
-              style={styles.tagTextInput}
+              style={[styles.tagTextInput, { borderColor: theme.border, color: theme.text }]}
               placeholder="Enter tag name"
-              placeholderTextColor={Colors.textTertiary}
+              placeholderTextColor={theme.textTertiary}
               value={newTag}
               onChangeText={setNewTag}
               autoFocus
@@ -517,10 +535,10 @@ export default function EntryEditorScreen() {
                   setShowTagInput(false);
                 }}
               >
-                <Text style={styles.tagInputCancelText}>Cancel</Text>
+                <Text style={[styles.tagInputCancelText, { color: theme.textSecondary }]}>Cancel</Text>
               </Pressable>
-              <Pressable style={styles.tagInputAdd} onPress={handleAddTag}>
-                <Text style={styles.tagInputAddText}>Add</Text>
+              <Pressable style={[styles.tagInputAdd, { backgroundColor: theme.primary }]} onPress={handleAddTag}>
+                <Text style={[styles.tagInputAddText, { color: theme.white }]}>Add</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -535,7 +553,7 @@ export default function EntryEditorScreen() {
       >
         <View style={styles.fullScreenContainer}>
           <Pressable style={styles.fullScreenCloseButton} onPress={closeFullScreen}>
-            <X size={30} color={Colors.white} />
+            <X size={30} color={theme.white} />
           </Pressable>
           <View style={styles.fullScreenContent}>
             {fullScreenMedia?.type === 'video' ? (
@@ -562,7 +580,6 @@ export default function EntryEditorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   keyboardAvoid: {
     flex: 1,
@@ -579,7 +596,6 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: FontSizes.md,
-    color: Colors.text,
   },
   headerCenter: {
     alignItems: 'center',
@@ -587,14 +603,11 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
   },
   timeText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
   },
   saveButton: {
-    backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
@@ -602,7 +615,6 @@ const styles = StyleSheet.create({
   saveText: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
-    color: Colors.white,
   },
   tagsRow: {
     flexDirection: 'row',
@@ -618,21 +630,11 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    borderColor: Colors.border,
     borderStyle: 'dashed',
-  },
-  tagButtonActive: {
-    borderColor: Colors.primary,
-    borderStyle: 'solid',
-    backgroundColor: '#E0F7F5',
   },
   tagButtonText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
     fontWeight: FontWeights.medium,
-  },
-  tagButtonTextActive: {
-    color: Colors.primary,
   },
   selectedTags: {
     flexDirection: 'row',
@@ -645,14 +647,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.surfaceSecondary,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,
   },
   selectedTagText: {
     fontSize: FontSizes.sm,
-    color: Colors.text,
   },
   titleContainer: {
     paddingHorizontal: Spacing.lg,
@@ -660,7 +660,6 @@ const styles = StyleSheet.create({
   titleInput: {
     fontSize: 28,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
     paddingVertical: Spacing.sm,
   },
   editorContainer: {
@@ -721,7 +720,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fabMenu: {
-    backgroundColor: Colors.white,
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     padding: Spacing.lg,
@@ -737,17 +735,14 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: Colors.surfaceSecondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   fabMenuText: {
     fontSize: FontSizes.md,
-    color: Colors.text,
     fontWeight: FontWeights.medium,
   },
   moodPicker: {
-    backgroundColor: Colors.white,
     borderTopLeftRadius: BorderRadius.xl,
     borderTopRightRadius: BorderRadius.xl,
     padding: Spacing.lg,
@@ -756,7 +751,6 @@ const styles = StyleSheet.create({
   moodPickerTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
     textAlign: 'center',
     marginBottom: Spacing.lg,
   },
@@ -770,21 +764,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.surfaceSecondary,
     width: '30%',
-  },
-  moodItemSelected: {
-    backgroundColor: '#E0F7F5',
-    borderWidth: 1,
-    borderColor: Colors.primary,
   },
   moodLabel: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
     marginTop: Spacing.xs,
   },
   tagInputModal: {
-    backgroundColor: Colors.white,
     marginHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
@@ -794,17 +780,14 @@ const styles = StyleSheet.create({
   tagInputTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
     marginBottom: Spacing.md,
   },
   tagTextInput: {
     fontSize: FontSizes.md,
     borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginBottom: Spacing.md,
-    color: Colors.text,
   },
   tagInputButtons: {
     flexDirection: 'row',
@@ -817,17 +800,14 @@ const styles = StyleSheet.create({
   },
   tagInputCancelText: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
   },
   tagInputAdd: {
-    backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
   },
   tagInputAddText: {
     fontSize: FontSizes.md,
-    color: Colors.white,
     fontWeight: FontWeights.medium,
   },
   fullScreenContainer: {

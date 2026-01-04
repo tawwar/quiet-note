@@ -9,8 +9,9 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 import MoodIcon from '@/components/MoodIcon';
 
 const MONTHS = [
@@ -22,6 +23,7 @@ const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { entries } = useDatabase();
   const insets = useSafeAreaInsets();
   const today = new Date();
@@ -80,21 +82,22 @@ export default function CalendarScreen() {
           key={day}
           style={[
             styles.dayCell,
-            isToday && styles.dayCellToday,
-            isSelected && styles.dayCellSelected,
+            isToday && { backgroundColor: theme.surfaceSecondary, borderRadius: BorderRadius.full, borderWidth: 2, borderColor: theme.primary },
+            isSelected && { backgroundColor: theme.primary, borderRadius: BorderRadius.full, borderWidth: 0 },
           ]}
           onPress={() => setSelectedDate(cellDate)}
         >
           <Text
             style={[
               styles.dayText,
-              isToday && styles.dayTextToday,
-              isSelected && styles.dayTextSelected,
+              { color: theme.text },
+              isToday && { color: theme.primary, fontWeight: FontWeights.semibold },
+              isSelected && { color: theme.white, fontWeight: FontWeights.semibold },
             ]}
           >
             {day}
           </Text>
-          {hasEntry && !isSelected && <View style={[styles.entryDot, isToday && styles.entryDotToday]} />}
+          {hasEntry && !isSelected && <View style={[styles.entryDot, { backgroundColor: theme.primary }]} />}
         </Pressable>
       );
     }
@@ -120,31 +123,31 @@ export default function CalendarScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Calendar</Text>
-        <Pressable onPress={goToToday} style={styles.todayButton}>
-          <Text style={styles.todayButtonText}>Today</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Calendar</Text>
+        <Pressable onPress={goToToday} style={[styles.todayButton, { backgroundColor: theme.primary }]}>
+          <Text style={[styles.todayButtonText, { color: theme.white }]}>Today</Text>
         </Pressable>
       </View>
 
       <View style={styles.monthSelector}>
         <Pressable onPress={goToPreviousMonth} style={styles.navButton}>
-          <ChevronLeft size={24} color={Colors.text} />
+          <ChevronLeft size={24} color={theme.text} />
         </Pressable>
-        <Text style={styles.monthText}>
+        <Text style={[styles.monthText, { color: theme.text }]}>
           {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
         </Text>
         <Pressable onPress={goToNextMonth} style={styles.navButton}>
-          <ChevronRight size={24} color={Colors.text} />
+          <ChevronRight size={24} color={theme.text} />
         </Pressable>
       </View>
 
-      <View style={styles.calendarContainer}>
+      <View style={[styles.calendarContainer, { backgroundColor: theme.surface }]}>
         <View style={styles.weekHeader}>
           {WEEK_DAYS.map((day) => (
             <View key={day} style={styles.weekDayCell}>
-              <Text style={styles.weekDayText}>{day}</Text>
+              <Text style={[styles.weekDayText, { color: theme.textSecondary }]}>{day}</Text>
             </View>
           ))}
         </View>
@@ -154,24 +157,24 @@ export default function CalendarScreen() {
 
       <ScrollView style={styles.entriesList}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>
             {selectedDate
               ? `Entries for ${selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
               : 'Recent Entries'}
           </Text>
           {selectedDate && (
             <Pressable onPress={() => setSelectedDate(null)}>
-              <Text style={styles.clearFilterText}>Show All</Text>
+              <Text style={[styles.clearFilterText, { color: theme.primary }]}>Show All</Text>
             </Pressable>
           )}
         </View>
 
         {filteredEntries.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               {selectedDate ? 'No entries for this day' : 'No entries yet'}
             </Text>
-            <Text style={styles.emptySubtext}>
+            <Text style={[styles.emptySubtext, { color: theme.textTertiary }]}>
               {selectedDate
                 ? 'Select another day or start journaling'
                 : 'Start journaling to see your entries here'}
@@ -181,12 +184,12 @@ export default function CalendarScreen() {
           filteredEntries.map((entry) => (
             <Pressable
               key={entry.id}
-              style={styles.entryItem}
+              style={[styles.entryItem, { backgroundColor: theme.surface }]}
               onPress={() => handleEntryPress(entry.id)}
             >
               <View style={styles.entryInfo}>
-                <Text style={styles.entryTitle}>{entry.title}</Text>
-                <Text style={styles.entryDate}>
+                <Text style={[styles.entryTitle, { color: theme.text }]}>{entry.title}</Text>
+                <Text style={[styles.entryDate, { color: theme.textSecondary }]}>
                   {new Date(entry.createdAt).toLocaleTimeString('en-US', {
                     hour: 'numeric',
                     minute: '2-digit',
@@ -206,7 +209,6 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -218,18 +220,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSizes.xxl,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
   },
   todayButton: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.primary,
   },
   todayButtonText: {
     fontSize: FontSizes.sm,
     fontWeight: FontWeights.medium,
-    color: Colors.white,
   },
   monthSelector: {
     flexDirection: 'row',
@@ -244,10 +243,8 @@ const styles = StyleSheet.create({
   monthText: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
   },
   calendarContainer: {
-    backgroundColor: Colors.white,
     marginHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
@@ -264,7 +261,6 @@ const styles = StyleSheet.create({
   },
   weekDayText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
     fontWeight: FontWeights.medium,
   },
   daysGrid: {
@@ -277,38 +273,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayCellToday: {
-    backgroundColor: Colors.surfaceSecondary,
-    borderRadius: BorderRadius.full,
-    borderWidth: 2,
-    borderColor: Colors.primary,
-  },
-  dayCellSelected: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.full,
-    borderWidth: 0,
-  },
   dayText: {
     fontSize: FontSizes.md,
-    color: Colors.text,
-  },
-  dayTextToday: {
-    color: Colors.primary,
-    fontWeight: FontWeights.semibold,
-  },
-  dayTextSelected: {
-    color: Colors.white,
-    fontWeight: FontWeights.semibold,
   },
   entryDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.primary,
     marginTop: 2,
-  },
-  entryDotToday: {
-    backgroundColor: Colors.primary,
   },
   entriesList: {
     flex: 1,
@@ -324,11 +296,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
   },
   clearFilterText: {
     fontSize: FontSizes.sm,
-    color: Colors.primary,
     fontWeight: FontWeights.medium,
   },
   emptyState: {
@@ -337,18 +307,15 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
     marginBottom: Spacing.xs,
   },
   emptySubtext: {
     fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
   },
   entryItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.white,
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.sm,
@@ -360,11 +327,9 @@ const styles = StyleSheet.create({
   entryTitle: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.medium,
-    color: Colors.text,
     marginBottom: 2,
   },
   entryDate: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
   },
 });

@@ -13,8 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowRight, Lock, Pencil, Sparkles, Heart, BookOpen, Zap } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 
 const goals = [
   { id: 'mindfulness', label: 'Mindfulness', icon: Sparkles },
@@ -25,10 +26,10 @@ const goals = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { saveUserSettings } = useDatabase();
   const [name, setName] = useState('');
   const [selectedGoal, setSelectedGoal] = useState('mindfulness');
-  const [currentPage] = useState(0);
 
   const handleStart = async () => {
     const userName = name.trim() || 'Friend';
@@ -42,7 +43,7 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -54,12 +55,12 @@ export default function OnboardingScreen() {
         >
           <View style={styles.header}>
             <View style={styles.pagination}>
-              <View style={[styles.dot, styles.dotActive]} />
-              <View style={styles.dot} />
-              <View style={styles.dot} />
+              <View style={[styles.dot, styles.dotActive, { backgroundColor: theme.primary }]} />
+              <View style={[styles.dot, { backgroundColor: theme.border }]} />
+              <View style={[styles.dot, { backgroundColor: theme.border }]} />
             </View>
             <Pressable onPress={handleSkip}>
-              <Text style={styles.skipText}>Skip</Text>
+              <Text style={[styles.skipText, { color: theme.text }]}>Skip</Text>
             </Pressable>
           </View>
 
@@ -72,29 +73,29 @@ export default function OnboardingScreen() {
           </View>
 
           <View style={styles.content}>
-            <Text style={styles.title}>Quiet Note</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: theme.text }]}>Quiet Note</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
               A private place to untangle your thoughts and capture your days.
             </Text>
 
-            <View style={styles.card}>
-              <Text style={styles.cardLabel}>What should we call you?</Text>
-              <View style={styles.inputContainer}>
+            <View style={[styles.card, { backgroundColor: theme.surface }, Shadows.sm]}>
+              <Text style={[styles.cardLabel, { color: theme.text }]}>What should we call you?</Text>
+              <View style={[styles.inputContainer, { backgroundColor: theme.surfaceSecondary }]}>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.text }]}
                   placeholder="e.g. Alex"
-                  placeholderTextColor={Colors.textTertiary}
+                  placeholderTextColor={theme.textTertiary}
                   value={name}
                   onChangeText={setName}
                 />
-                <Pencil size={20} color={Colors.textTertiary} />
+                <Pencil size={20} color={theme.textTertiary} />
               </View>
             </View>
 
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: theme.surface }, Shadows.sm]}>
               <View style={styles.goalHeader}>
-                <Sparkles size={20} color={Colors.primary} />
-                <Text style={styles.cardLabel}>Primary Goal</Text>
+                <Sparkles size={20} color={theme.primary} />
+                <Text style={[styles.cardLabel, { color: theme.text }]}>Primary Goal</Text>
               </View>
               <View style={styles.goalsGrid}>
                 {goals.map((goal) => {
@@ -103,14 +104,22 @@ export default function OnboardingScreen() {
                   return (
                     <Pressable
                       key={goal.id}
-                      style={[styles.goalButton, isSelected && styles.goalButtonSelected]}
+                      style={[
+                        styles.goalButton,
+                        { backgroundColor: theme.surfaceSecondary, borderColor: theme.surfaceSecondary },
+                        isSelected && { backgroundColor: '#E0F7F5', borderColor: theme.primary },
+                      ]}
                       onPress={() => setSelectedGoal(goal.id)}
                     >
                       <IconComponent
                         size={16}
-                        color={isSelected ? Colors.primary : Colors.textSecondary}
+                        color={isSelected ? theme.primary : theme.textSecondary}
                       />
-                      <Text style={[styles.goalText, isSelected && styles.goalTextSelected]}>
+                      <Text style={[
+                        styles.goalText,
+                        { color: theme.textSecondary },
+                        isSelected && { color: theme.primary },
+                      ]}>
                         {goal.label}
                       </Text>
                     </Pressable>
@@ -119,14 +128,14 @@ export default function OnboardingScreen() {
               </View>
             </View>
 
-            <Pressable style={styles.startButton} onPress={handleStart}>
-              <Text style={styles.startButtonText}>Start Writing</Text>
-              <ArrowRight size={20} color={Colors.white} />
+            <Pressable style={[styles.startButton, { backgroundColor: theme.primary }]} onPress={handleStart}>
+              <Text style={[styles.startButtonText, { color: theme.white }]}>Start Writing</Text>
+              <ArrowRight size={20} color={theme.white} />
             </Pressable>
 
             <View style={styles.privacyRow}>
-              <Lock size={14} color={Colors.textTertiary} />
-              <Text style={styles.privacyText}>Your data stays privately on your device.</Text>
+              <Lock size={14} color={theme.textTertiary} />
+              <Text style={[styles.privacyText, { color: theme.textTertiary }]}>Your data stays privately on your device.</Text>
             </View>
           </View>
         </ScrollView>
@@ -138,7 +147,6 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   keyboardView: {
     flex: 1,
@@ -162,15 +170,12 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.border,
   },
   dotActive: {
     width: 24,
-    backgroundColor: Colors.primary,
   },
   skipText: {
     fontSize: FontSizes.md,
-    color: Colors.text,
     fontWeight: FontWeights.medium,
   },
   imageContainer: {
@@ -189,34 +194,28 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
     textAlign: 'center',
     marginBottom: Spacing.sm,
   },
   subtitle: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: Spacing.xl,
   },
   card: {
-    backgroundColor: Colors.white,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
-    ...Shadows.sm,
   },
   cardLabel: {
     fontSize: FontSizes.md,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
     marginBottom: Spacing.sm,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceSecondary,
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
@@ -224,7 +223,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: FontSizes.md,
-    color: Colors.text,
     paddingVertical: Spacing.xs,
   },
   goalHeader: {
@@ -245,27 +243,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: Colors.surfaceSecondary,
-  },
-  goalButtonSelected: {
-    backgroundColor: '#E0F7F5',
-    borderColor: Colors.primary,
   },
   goalText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
     fontWeight: FontWeights.medium,
-  },
-  goalTextSelected: {
-    color: Colors.primary,
   },
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.primary,
     borderRadius: BorderRadius.full,
     paddingVertical: Spacing.md,
     gap: 8,
@@ -275,7 +262,6 @@ const styles = StyleSheet.create({
   startButtonText: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.white,
   },
   privacyRow: {
     flexDirection: 'row',
@@ -285,6 +271,5 @@ const styles = StyleSheet.create({
   },
   privacyText: {
     fontSize: FontSizes.sm,
-    color: Colors.textTertiary,
   },
 });

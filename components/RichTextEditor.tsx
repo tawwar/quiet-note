@@ -2,7 +2,8 @@ import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
 import { EnrichedTextInput } from 'react-native-enriched';
 import type { EnrichedTextInputInstance, OnChangeStateEvent } from 'react-native-enriched';
-import { Colors, FontSizes } from '@/constants/theme';
+import { FontSizes } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 export interface RichTextEditorRef {
   toggleBold: () => void;
@@ -28,6 +29,7 @@ export interface RichTextEditorProps {
 
 const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
   ({ placeholder, initialHtml, onChangeState, onFocus, onBlur, style }, ref) => {
+    const { theme, themeMode } = useTheme();
     const inputRef = useRef<EnrichedTextInputInstance>(null);
 
     useImperativeHandle(ref, () => ({
@@ -55,17 +57,17 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={true}
           persistentScrollbar={true}
-          indicatorStyle="black"
+          indicatorStyle={themeMode === 'dark' ? 'white' : 'black'}
           nestedScrollEnabled={true}
         >
           <EnrichedTextInput
             ref={inputRef}
             placeholder={placeholder}
-            placeholderTextColor={Colors.textTertiary}
+            placeholderTextColor={theme.textTertiary}
             onChangeState={(e) => onChangeState?.(e.nativeEvent)}
             onFocus={onFocus}
             onBlur={onBlur}
-            style={styles.input}
+            style={[styles.input, { color: theme.text }]}
             defaultValue={initialHtml}
             scrollEnabled={false}
           />
@@ -90,7 +92,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: FontSizes.md,
-    color: Colors.text,
     lineHeight: 24,
     textAlignVertical: 'top',
     minHeight: 200,

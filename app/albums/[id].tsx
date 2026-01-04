@@ -11,21 +11,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Play, Image as ImageIcon, Video } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
+import { Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import { useTheme } from '@/context/ThemeContext';
 
 interface MediaItem {
   id: string;
   uri: string;
-  type: 'image' | 'video';
-  width: number | null;
-  height: number | null;
-  duration: number | null;
+  type: string;
+  width?: number | null;
+  height?: number | null;
+  duration?: number | null;
   createdAt: string;
 }
 
 export default function AlbumDetailScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { albums, getAllMedia } = useDatabase();
   const [album, setAlbum] = useState<any>(null);
@@ -54,9 +56,9 @@ export default function AlbumDetailScreen() {
     if (mediaItems.length === 0) {
       return (
         <View style={styles.emptyState}>
-          <ImageIcon size={48} color={Colors.textTertiary} />
-          <Text style={styles.emptyStateTitle}>No Media Yet</Text>
-          <Text style={styles.emptyStateText}>
+          <ImageIcon size={48} color={theme.textTertiary} />
+          <Text style={[styles.emptyStateTitle, { color: theme.text }]}>No Media Yet</Text>
+          <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>
             Media from your journal entries will appear here
           </Text>
         </View>
@@ -71,11 +73,11 @@ export default function AlbumDetailScreen() {
             {item.type === 'video' && (
               <View style={styles.videoOverlay}>
                 <View style={styles.playButton}>
-                  <Play size={20} color={Colors.white} fill={Colors.white} />
+                  <Play size={20} color={theme.white} fill={theme.white} />
                 </View>
                 {item.duration && (
                   <View style={styles.durationBadge}>
-                    <Text style={styles.durationText}>
+                    <Text style={[styles.durationText, { color: theme.white }]}>
                       {Math.floor(item.duration / 60)}:{String(Math.floor(item.duration % 60)).padStart(2, '0')}
                     </Text>
                   </View>
@@ -90,9 +92,9 @@ export default function AlbumDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={theme.primary} />
         </View>
       </SafeAreaView>
     );
@@ -100,17 +102,17 @@ export default function AlbumDetailScreen() {
 
   if (!album) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
         <View style={styles.header}>
           <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <ArrowLeft size={24} color={Colors.text} />
+            <ArrowLeft size={24} color={theme.text} />
           </Pressable>
-          <Text style={styles.headerTitle}>Album Not Found</Text>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Album Not Found</Text>
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateTitle}>Album Not Found</Text>
-          <Text style={styles.emptyStateText}>This album could not be loaded</Text>
+          <Text style={[styles.emptyStateTitle, { color: theme.text }]}>Album Not Found</Text>
+          <Text style={[styles.emptyStateText, { color: theme.textSecondary }]}>This album could not be loaded</Text>
         </View>
       </SafeAreaView>
     );
@@ -120,32 +122,32 @@ export default function AlbumDetailScreen() {
   const videoCount = mediaItems.filter((m) => m.type === 'video').length;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <ArrowLeft size={24} color={Colors.text} />
+          <ArrowLeft size={24} color={theme.text} />
         </Pressable>
-        <Text style={styles.headerTitle}>{album.name}</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>{album.name}</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <View style={styles.albumInfo}>
+      <View style={[styles.albumInfo, { backgroundColor: theme.surface }]}>
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <ImageIcon size={20} color={Colors.primary} />
-            <Text style={styles.statValue}>{imageCount}</Text>
-            <Text style={styles.statLabel}>Photos</Text>
+            <ImageIcon size={20} color={theme.primary} />
+            <Text style={[styles.statValue, { color: theme.text }]}>{imageCount}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Photos</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
           <View style={styles.statItem}>
-            <Video size={20} color={Colors.primary} />
-            <Text style={styles.statValue}>{videoCount}</Text>
-            <Text style={styles.statLabel}>Videos</Text>
+            <Video size={20} color={theme.primary} />
+            <Text style={[styles.statValue, { color: theme.text }]}>{videoCount}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Videos</Text>
           </View>
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{mediaItems.length}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+            <Text style={[styles.statValue, { color: theme.text }]}>{mediaItems.length}</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Total</Text>
           </View>
         </View>
       </View>
@@ -161,7 +163,6 @@ export default function AlbumDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -181,12 +182,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
     flex: 1,
     textAlign: 'center',
   },
   albumInfo: {
-    backgroundColor: Colors.white,
     marginHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
@@ -205,16 +204,13 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: FontSizes.xl,
     fontWeight: FontWeights.bold,
-    color: Colors.text,
   },
   statLabel: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
   },
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: Colors.border,
   },
   content: {
     flex: 1,
@@ -261,7 +257,6 @@ const styles = StyleSheet.create({
   },
   durationText: {
     fontSize: 10,
-    color: Colors.white,
     fontWeight: FontWeights.medium,
   },
   emptyState: {
@@ -272,13 +267,11 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: FontSizes.lg,
     fontWeight: FontWeights.semibold,
-    color: Colors.text,
     marginTop: Spacing.md,
     marginBottom: Spacing.sm,
   },
   emptyStateText: {
     fontSize: FontSizes.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
   },
 });

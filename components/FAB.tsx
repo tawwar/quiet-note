@@ -6,7 +6,8 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { Plus } from 'lucide-react-native';
-import { Colors, Shadows } from '@/constants/theme';
+import { Shadows } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 interface FABProps {
   onPress: () => void;
@@ -17,6 +18,7 @@ interface FABProps {
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function FAB({ onPress, style, size = 56 }: FABProps) {
+  const { theme } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -38,19 +40,18 @@ export default function FAB({ onPress, style, size = 56 }: FABProps) {
       onPressOut={handlePressOut}
       style={[
         styles.fab,
-        { width: size, height: size, borderRadius: size / 2 },
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: theme.primary },
         animatedStyle,
         style,
       ]}
     >
-      <Plus size={28} color={Colors.white} strokeWidth={2.5} />
+      <Plus size={28} color={theme.white} strokeWidth={2.5} />
     </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
   fab: {
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadows.lg,
