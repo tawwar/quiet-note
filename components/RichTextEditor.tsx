@@ -1,5 +1,5 @@
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
-import { StyleSheet, Platform } from 'react-native';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { EnrichedTextInput } from 'react-native-enriched';
 import type { EnrichedTextInputInstance, OnChangeStateEvent } from 'react-native-enriched';
 import { Colors, FontSizes } from '@/constants/theme';
@@ -49,16 +49,28 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
     }));
 
     return (
-      <EnrichedTextInput
-        ref={inputRef}
-        placeholder={placeholder}
-        placeholderTextColor={Colors.textTertiary}
-        onChangeState={(e) => onChangeState?.(e.nativeEvent)}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        style={[styles.input, style] as any}
-        defaultValue={initialHtml}
-      />
+      <View style={[styles.container, style]}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
+          persistentScrollbar={true}
+          indicatorStyle="black"
+          nestedScrollEnabled={true}
+        >
+          <EnrichedTextInput
+            ref={inputRef}
+            placeholder={placeholder}
+            placeholderTextColor={Colors.textTertiary}
+            onChangeState={(e) => onChangeState?.(e.nativeEvent)}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            style={styles.input}
+            defaultValue={initialHtml}
+            scrollEnabled={false}
+          />
+        </ScrollView>
+      </View>
     );
   }
 );
@@ -66,12 +78,22 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
 RichTextEditor.displayName = 'RichTextEditor';
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   input: {
+    flex: 1,
     fontSize: FontSizes.md,
     color: Colors.text,
     lineHeight: 24,
-    minHeight: 150,
     textAlignVertical: 'top',
+    minHeight: 200,
   },
 });
 

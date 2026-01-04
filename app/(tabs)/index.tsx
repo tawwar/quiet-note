@@ -22,7 +22,7 @@ import MoodIcon from '@/components/MoodIcon';
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const ENTRIES_PER_PAGE = 10;
 
-// Helper function to strip HTML tags for preview
+// Helper function to strip HTML tags and decode entities for preview
 const stripHtmlTags = (html: string | null): string => {
   if (!html) return '';
   return html
@@ -33,6 +33,8 @@ const stripHtmlTags = (html: string | null): string => {
     .replace(/&gt;/g, '>')   // Replace &gt; with >
     .replace(/&quot;/g, '"') // Replace &quot; with "
     .replace(/&#39;/g, "'")  // Replace &#39; with '
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(parseInt(code, 10))) // Decode numeric entities (emojis)
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCodePoint(parseInt(code, 16))) // Decode hex entities
     .replace(/\s+/g, ' ')    // Collapse multiple spaces
     .trim();
 };

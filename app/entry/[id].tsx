@@ -19,41 +19,62 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
   X,
-  Image as ImageIcon,
-  Mic,
-  MapPin,
-  Sun,
+  Hash,
   Smile,
+  Camera,
+  Images,
+  Frown,
+  CloudRain,
+  Sparkles,
+  Heart,
+  Zap,
+  Meh,
   Play,
 } from 'lucide-react-native';
 import { Colors, Spacing, BorderRadius, FontSizes, FontWeights } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
+import FAB from '@/components/FAB';
 import RichTextEditor, { RichTextEditorRef } from '@/components/RichTextEditor';
 import FormattingToolbar from '@/components/FormattingToolbar';
 import type { OnChangeStateEvent } from 'react-native-enriched';
+import * as ImagePicker from 'expo-image-picker';
 
-interface ChecklistItemType {
-  id: string;
-  text: string;
-  isCompleted: boolean;
+interface MediaItem {
+  id?: string;
+  uri: string;
+  type: 'image' | 'video';
+  width?: number;
+  height?: number;
+  duration?: number;
 }
+
+const moods = [
+  { id: 'happy', label: 'Happy', icon: Smile, color: '#FFD700' },
+  { id: 'sad', label: 'Sad', icon: Frown, color: '#6B7280' },
+  { id: 'anxious', label: 'Anxious', icon: CloudRain, color: '#3B82F6' },
+  { id: 'peaceful', label: 'Peaceful', icon: Sparkles, color: '#8B5CF6' },
+  { id: 'grateful', label: 'Grateful', icon: Heart, color: '#EF4444' },
+  { id: 'excited', label: 'Excited', icon: Zap, color: '#F59E0B' },
+  { id: 'neutral', label: 'Neutral', icon: Meh, color: '#9CA3AF' },
+];
 
 const INPUT_ACCESSORY_VIEW_ID = 'editRichTextToolbar';
 
 export default function EntryEditorScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getEntryById, updateEntry, getEntryMedia, getChecklistItems } = useDatabase();
+  const { getEntryById, updateEntry, getEntryMedia, deleteMedia } = useDatabase();
   const editorRef = useRef<RichTextEditorRef>(null);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<string>('');
+  const [tags, setTags] = useState<string[]>([]);
   const [mood, setMood] = useState<string | null>(null);
-  const [weather, setWeather] = useState<string | null>(null);
-  const [location, setLocation] = useState<string | null>(null);
-  const [checklist, setChecklist] = useState<ChecklistItemType[]>([]);
-  const [media, setMedia] = useState<any[]>([]);
-  const [newChecklistItem, setNewChecklistItem] = useState('');
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [showFabMenu, setShowFabMenu] = useState(false);
+  const [showMoodPicker, setShowMoodPicker] = useState(false);
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [newTag, setNewTag] = useState('');
   const [fullScreenMedia, setFullScreenMedia] = useState<{ uri: string; type: string } | null>(null);
   const [stylesState, setStylesState] = useState<OnChangeStateEvent | null>(null);
   const [isContentFocused, setIsContentFocused] = useState(false);
@@ -61,9 +82,6 @@ export default function EntryEditorScreen() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
-  const isNewEntry = id === 'new';
-
-  // Track keyboard visibility
   useEffect(() => {
     const showSubscription = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -82,15 +100,6 @@ export default function EntryEditorScreen() {
 
   const showToolbar = isContentFocused && isKeyboardVisible;
 
-  // Video player for thumbnail
-  const thumbnailPlayer = useVideoPlayer(
-    media.length > 0 && media[0].type === 'video' ? media[0].uri : null,
-    (player) => {
-      player.loop = false;
-      player.muted = true;
-    }
-  );
-
   // Video player for fullscreen
   const fullscreenPlayer = useVideoPlayer(
     fullScreenMedia?.type === 'video' ? fullScreenMedia.uri : null,
@@ -101,7 +110,7 @@ export default function EntryEditorScreen() {
   );
 
   useEffect(() => {
-    if (!isNewEntry && id) {
+    if (id && id !== 'new') {
       loadEntry();
     }
   }, [id]);
@@ -119,18 +128,14 @@ export default function EntryEditorScreen() {
         setTitle(entry.title);
         setContent(entry.content || '');
         setMood(entry.mood);
-        setWeather(entry.weather);
-        setLocation(entry.location);
+        setTags(entry.tags ? JSON.parse(entry.tags) : []);
         setCreatedAt(entry.createdAt);
 
         const entryMedia = await getEntryMedia(id);
-        setMedia(entryMedia);
-
-        const items = await getChecklistItems(id);
-        setChecklist(items.map((item) => ({
-          id: item.id,
-          text: item.text,
-          isCompleted: item.isCompleted || false,
+        setMediaItems(entryMedia.map((m) => ({
+          id: m.id,
+          uri: m.uri,
+          type: m.type as 'image' | 'video',
         })));
         
         setIsLoaded(true);
@@ -140,7 +145,7 @@ export default function EntryEditorScreen() {
 
   const displayDate = createdAt ? new Date(createdAt) : new Date();
   const dateStr = displayDate.toLocaleDateString('en-US', {
-    month: 'long',
+    month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
@@ -149,6 +154,8 @@ export default function EntryEditorScreen() {
     minute: '2-digit',
     hour12: true,
   });
+
+  const selectedMood = moods.find((m) => m.id === mood);
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -163,8 +170,7 @@ export default function EntryEditorScreen() {
         title: title.trim(),
         content: html || null,
         mood,
-        weather,
-        location,
+        tags: tags.length > 0 ? JSON.stringify(tags) : null,
       });
     }
     router.back();
@@ -174,28 +180,110 @@ export default function EntryEditorScreen() {
     router.back();
   };
 
-  const toggleChecklistItem = (itemId: string) => {
-    setChecklist(checklist.map((item) =>
-      item.id === itemId ? { ...item, isCompleted: !item.isCompleted } : item
-    ));
+  const handleAddTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim())) {
+      setTags([...tags, newTag.trim()]);
+    }
+    setNewTag('');
+    setShowTagInput(false);
   };
 
-  const addChecklistItem = () => {
-    if (newChecklistItem.trim()) {
-      setChecklist([
-        ...checklist,
-        {
-          id: Date.now().toString(),
-          text: newChecklistItem.trim(),
-          isCompleted: false,
-        },
-      ]);
-      setNewChecklistItem('');
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter((t) => t !== tagToRemove));
+  };
+
+  const handleSelectMood = (selectedMoodId: string) => {
+    setMood(selectedMoodId);
+    setShowMoodPicker(false);
+  };
+
+  const handleCamera = async () => {
+    setShowFabMenu(false);
+
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Camera access is needed to take photos.');
+        return;
+      }
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsEditing: true,
+        quality: 0.8,
+        videoMaxDuration: 60,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        const asset = result.assets[0];
+        setMediaItems((prev) => [
+          ...prev,
+          {
+            uri: asset.uri,
+            type: asset.type === 'video' ? 'video' : 'image',
+            width: asset.width,
+            height: asset.height,
+            duration: asset.duration || undefined,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.warn('Camera error:', error);
     }
   };
 
-  const openFullScreen = (uri: string, type: string) => {
-    setFullScreenMedia({ uri, type });
+  const handleGallery = async () => {
+    setShowFabMenu(false);
+
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Media library access is needed to select photos.');
+        return;
+      }
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos'],
+        allowsMultipleSelection: true,
+        quality: 0.8,
+        selectionLimit: 10,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        const newItems = result.assets.map((asset) => ({
+          uri: asset.uri,
+          type: (asset.type === 'video' ? 'video' : 'image') as 'image' | 'video',
+          width: asset.width,
+          height: asset.height,
+          duration: asset.duration || undefined,
+        }));
+        setMediaItems((prev) => [...prev, ...newItems]);
+      }
+    } catch (error) {
+      console.warn('Gallery error:', error);
+    }
+  };
+
+  const handleRemoveMedia = async (index: number) => {
+    const item = mediaItems[index];
+    
+    // If the media has an ID, it exists in the database and needs to be deleted
+    if (item.id) {
+      try {
+        await deleteMedia(item.id);
+      } catch (error) {
+        console.warn('Error deleting media:', error);
+        Alert.alert('Error', 'Failed to delete media. Please try again.');
+        return;
+      }
+    }
+    
+    // Remove from local state
+    setMediaItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const closeFullScreen = () => {
@@ -218,10 +306,10 @@ export default function EntryEditorScreen() {
   );
 
   const renderContent = () => (
-    <>
+    <View style={styles.mainContainer}>
       <View style={styles.header}>
-        <Pressable onPress={handleClose} style={styles.closeButton}>
-          <X size={24} color={Colors.text} />
+        <Pressable onPress={handleClose}>
+          <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={styles.dateText}>{dateStr}</Text>
@@ -232,7 +320,38 @@ export default function EntryEditorScreen() {
         </Pressable>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.tagsRow}>
+        <Pressable style={styles.tagButton} onPress={() => setShowTagInput(true)}>
+          <Hash size={16} color={Colors.textSecondary} />
+          <Text style={styles.tagButtonText}>ADD TAG</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.tagButton, mood && styles.tagButtonActive]}
+          onPress={() => setShowMoodPicker(true)}
+        >
+          {selectedMood ? (
+            <selectedMood.icon size={16} color={selectedMood.color} />
+          ) : (
+            <Smile size={16} color={Colors.textSecondary} />
+          )}
+          <Text style={[styles.tagButtonText, mood && styles.tagButtonTextActive]}>
+            {selectedMood ? selectedMood.label.toUpperCase() : 'ADD EMOTION'}
+          </Text>
+        </Pressable>
+      </View>
+
+      {tags.length > 0 && (
+        <View style={styles.selectedTags}>
+          {tags.map((tag) => (
+            <Pressable key={tag} style={styles.selectedTag} onPress={() => handleRemoveTag(tag)}>
+              <Text style={styles.selectedTagText}>#{tag}</Text>
+              <X size={14} color={Colors.textSecondary} />
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.titleContainer}>
         <TextInput
           style={styles.titleInput}
           placeholder="Title your day..."
@@ -241,123 +360,46 @@ export default function EntryEditorScreen() {
           onChangeText={setTitle}
           multiline
         />
+      </View>
 
-        <View style={styles.tagsRow}>
-          {mood && (
-            <View style={styles.tag}>
-              <Smile size={14} color={Colors.text} />
-              <Text style={styles.tagText}>{mood.charAt(0).toUpperCase() + mood.slice(1)}</Text>
-            </View>
-          )}
-          {weather && (
-            <View style={[styles.tag, styles.tagOutlined]}>
-              <Sun size={14} color={Colors.textSecondary} />
-              <Text style={styles.tagTextOutlined}>
-                {weather.charAt(0).toUpperCase() + weather.slice(1)}
-              </Text>
-            </View>
-          )}
-          {location && (
-            <View style={[styles.tag, styles.tagOutlined]}>
-              <MapPin size={14} color={Colors.textSecondary} />
-              <Text style={styles.tagTextOutlined}>{location}</Text>
-            </View>
-          )}
-        </View>
-
+      <View style={styles.editorContainer}>
         <RichTextEditor
           ref={editorRef}
           placeholder="What's on your mind today? Start writing..."
           onChangeState={setStylesState}
           onFocus={() => setIsContentFocused(true)}
           onBlur={() => setIsContentFocused(false)}
-          style={styles.contentInput}
         />
+      </View>
 
-        {media.length > 0 && media[0].uri && (
-          <Pressable
-            style={styles.mediaContainer}
-            onPress={() => openFullScreen(media[0].uri, media[0].type || 'image')}
-          >
-            {media[0].type === 'video' ? (
-              <View style={styles.videoThumbnailContainer}>
-                <VideoView
-                  player={thumbnailPlayer}
-                  style={styles.mediaImage}
-                  nativeControls={false}
-                  contentFit="cover"
-                />
-                <View style={styles.playIconOverlay}>
-                  <Play size={32} color={Colors.white} fill={Colors.white} />
+      {mediaItems.length > 0 && (
+        <ScrollView 
+          horizontal 
+          style={styles.mediaScrollView}
+          showsHorizontalScrollIndicator={true}
+        >
+          {mediaItems.map((item, index) => (
+            <Pressable 
+              key={item.id || index} 
+              style={styles.mediaItem}
+              onPress={() => setFullScreenMedia({ uri: item.uri, type: item.type })}
+            >
+              <Image source={{ uri: item.uri }} style={styles.mediaImage} />
+              {item.type === 'video' && (
+                <View style={styles.videoOverlay}>
+                  <Play size={24} color={Colors.white} fill={Colors.white} />
                 </View>
-              </View>
-            ) : (
-              <Image source={{ uri: media[0].uri }} style={styles.mediaImage} />
-            )}
-
-            {(media[0].caption || media[0].timestamp) && (
-              <View style={styles.mediaCaptionContainer}>
-                <Text style={styles.mediaCaption}>
-                  {media[0].caption} {media[0].timestamp && `• ${media[0].timestamp}`}
-                </Text>
-              </View>
-            )}
-          </Pressable>
-        )}
-
-        {checklist.length > 0 && (
-          <View style={styles.checklistSection}>
-            <Text style={styles.sectionLabel}>TO DO</Text>
-            {checklist.map((item) => (
-              <Pressable
-                key={item.id}
-                style={styles.checklistItem}
-                onPress={() => toggleChecklistItem(item.id)}
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    item.isCompleted && styles.checkboxChecked,
-                  ]}
-                >
-                  {item.isCompleted && (
-                    <View style={styles.checkmark} />
-                  )}
-                </View>
-                <Text
-                  style={[
-                    styles.checklistText,
-                    item.isCompleted && styles.checklistTextCompleted,
-                  ]}
-                >
-                  {item.text}
-                </Text>
+              )}
+              <Pressable style={styles.removeMediaButton} onPress={() => handleRemoveMedia(index)}>
+                <X size={16} color={Colors.white} />
               </Pressable>
-            ))}
-          </View>
-        )}
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
 
-        <TextInput
-          style={styles.addMoreInput}
-          placeholder="What else is on your mind?"
-          placeholderTextColor={Colors.textTertiary}
-          value={newChecklistItem}
-          onChangeText={setNewChecklistItem}
-          onSubmitEditing={addChecklistItem}
-        />
-
-        <View style={{ height: 120 }} />
-      </ScrollView>
-
-      {/* <View style={styles.bottomToolbar}>
-        <Pressable style={styles.toolButton}>
-          <ImageIcon size={22} color={Colors.text} />
-        </Pressable>
-        <Pressable style={styles.toolButton}>
-          <Mic size={22} color={Colors.text} />
-        </Pressable>
-      </View> */}
-    </>
+      <FAB onPress={() => setShowFabMenu(true)} style={styles.fab} />
+    </View>
   );
 
   return (
@@ -370,11 +412,108 @@ export default function EntryEditorScreen() {
           </InputAccessoryView>
         </>
       ) : (
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <KeyboardAvoidingView style={styles.keyboardAvoid} behavior="padding">
           {renderContent()}
           {showToolbar && renderToolbar()}
         </KeyboardAvoidingView>
       )}
+
+      <Modal
+        visible={showFabMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFabMenu(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowFabMenu(false)}>
+          <Pressable style={styles.fabMenu} onPress={(e) => e.stopPropagation()}>
+            <Pressable style={styles.fabMenuItem} onPress={handleCamera}>
+              <View style={styles.fabMenuIcon}>
+                <Camera size={24} color={Colors.primary} />
+              </View>
+              <Text style={styles.fabMenuText}>Take Photo/Video</Text>
+            </Pressable>
+            <Pressable style={styles.fabMenuItem} onPress={handleGallery}>
+              <View style={styles.fabMenuIcon}>
+                <Images size={24} color={Colors.primary} />
+              </View>
+              <Text style={styles.fabMenuText}>Choose from Gallery</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={showMoodPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMoodPicker(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowMoodPicker(false)}>
+          <Pressable style={styles.moodPicker} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.moodPickerTitle}>How are you feeling?</Text>
+            <View style={styles.moodGrid}>
+              {moods.map((m) => {
+                const IconComponent = m.icon;
+                const isSelected = mood === m.id;
+                return (
+                  <Pressable
+                    key={m.id}
+                    style={[styles.moodItem, isSelected && styles.moodItemSelected]}
+                    onPress={() => handleSelectMood(m.id)}
+                  >
+                    <IconComponent
+                      size={28}
+                      color={isSelected ? m.color : Colors.textSecondary}
+                    />
+                    <Text
+                      style={[styles.moodLabel, isSelected && { color: m.color, fontWeight: FontWeights.medium }]}
+                    >
+                      {m.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={showTagInput}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowTagInput(false)}
+      >
+        <Pressable style={styles.tagModalOverlay} onPress={() => setShowTagInput(false)}>
+          <Pressable style={styles.tagInputModal} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.tagInputTitle}>Add a tag</Text>
+            <TextInput
+              style={styles.tagTextInput}
+              placeholder="Enter tag name"
+              placeholderTextColor={Colors.textTertiary}
+              value={newTag}
+              onChangeText={setNewTag}
+              autoFocus
+              onSubmitEditing={handleAddTag}
+              returnKeyType="done"
+            />
+            <View style={styles.tagInputButtons}>
+              <Pressable
+                style={styles.tagInputCancel}
+                onPress={() => {
+                  setNewTag('');
+                  setShowTagInput(false);
+                }}
+              >
+                <Text style={styles.tagInputCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable style={styles.tagInputAdd} onPress={handleAddTag}>
+                <Text style={styles.tagInputAddText}>Add</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal
         visible={!!fullScreenMedia}
@@ -413,6 +552,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  mainContainer: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -420,8 +565,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
-  closeButton: {
-    padding: Spacing.xs,
+  cancelText: {
+    fontSize: FontSizes.md,
+    color: Colors.text,
   },
   headerCenter: {
     alignItems: 'center',
@@ -446,146 +592,231 @@ const styles = StyleSheet.create({
     fontWeight: FontWeights.semibold,
     color: Colors.white,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: Spacing.lg,
-  },
-  titleInput: {
-    fontSize: 28,
-    fontWeight: FontWeights.bold,
-    color: Colors.text,
-    marginBottom: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
   tagsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
     gap: Spacing.sm,
-    marginBottom: Spacing.lg,
   },
-  tag: {
+  tagButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
-    backgroundColor: Colors.surfaceSecondary,
-  },
-  tagOutlined: {
-    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: Colors.border,
+    borderStyle: 'dashed',
   },
-  tagText: {
-    fontSize: FontSizes.sm,
-    color: Colors.text,
-    fontWeight: FontWeights.medium,
+  tagButtonActive: {
+    borderColor: Colors.primary,
+    borderStyle: 'solid',
+    backgroundColor: '#E0F7F5',
   },
-  tagTextOutlined: {
+  tagButtonText: {
     fontSize: FontSizes.sm,
     color: Colors.textSecondary,
+    fontWeight: FontWeights.medium,
   },
-  contentInput: {
-    marginBottom: Spacing.lg,
+  tagButtonTextActive: {
+    color: Colors.primary,
   },
-  mediaContainer: {
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    marginBottom: Spacing.lg,
+  selectedTags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  selectedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: Colors.surfaceSecondary,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+  },
+  selectedTagText: {
+    fontSize: FontSizes.sm,
+    color: Colors.text,
+  },
+  titleContainer: {
+    paddingHorizontal: Spacing.lg,
+  },
+  titleInput: {
+    fontSize: 28,
+    fontWeight: FontWeights.bold,
+    color: Colors.text,
+    paddingVertical: Spacing.sm,
+  },
+  editorContainer: {
+    flex: 1,
+    paddingHorizontal: Spacing.lg,
+  },
+  mediaScrollView: {
+    maxHeight: 120,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+  },
+  mediaItem: {
+    width: 100,
+    height: 100,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    marginRight: Spacing.sm,
   },
   mediaImage: {
     width: '100%',
-    height: 220,
+    height: '100%',
   },
-  mediaCaptionContainer: {
+  videoOverlay: {
     position: 'absolute',
-    bottom: Spacing.sm,
-    left: Spacing.sm,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm,
-  },
-  mediaCaption: {
-    fontSize: FontSizes.sm,
-    color: Colors.white,
-  },
-  checklistSection: {
-    marginBottom: Spacing.md,
-  },
-  sectionLabel: {
-    fontSize: FontSizes.xs,
-    fontWeight: FontWeights.semibold,
-    color: Colors.textSecondary,
-    letterSpacing: 1,
-    marginBottom: Spacing.md,
-  },
-  checklistItem: {
-    flexDirection: 'row',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    gap: Spacing.md,
+    justifyContent: 'center',
   },
-  checkbox: {
+  removeMediaButton: {
+    position: 'absolute',
+    top: Spacing.xs,
+    right: Spacing.xs,
     width: 24,
     height: 24,
-    borderRadius: BorderRadius.sm,
-    borderWidth: 2,
-    borderColor: Colors.border,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
   },
-  checkmark: {
-    width: 12,
-    height: 6,
-    borderLeftWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: Colors.white,
-    transform: [{ rotate: '-45deg' }, { translateY: -2 }],
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
   },
-  checklistText: {
-    fontSize: FontSizes.md,
-    color: Colors.text,
+  tagModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  checklistTextCompleted: {
-    textDecorationLine: 'line-through',
-    color: Colors.textTertiary,
+  fabMenu: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? 40 : Spacing.lg,
   },
-  addMoreInput: {
-    fontSize: FontSizes.md,
-    color: Colors.textTertiary,
-    paddingVertical: Spacing.md,
-  },
-  bottomToolbar: {
+  fabMenuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    backgroundColor: Colors.white,
     gap: Spacing.md,
   },
-  toolButton: {
-    padding: Spacing.sm,
-  },
-  videoThumbnailContainer: {
-    width: '100%',
-    height: 220,
-    justifyContent: 'center',
+  fabMenuIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.surfaceSecondary,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  playIconOverlay: {
-    position: 'absolute',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 12,
-    borderRadius: 30,
+  fabMenuText: {
+    fontSize: FontSizes.md,
+    color: Colors.text,
+    fontWeight: FontWeights.medium,
+  },
+  moodPicker: {
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: BorderRadius.xl,
+    borderTopRightRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? 40 : Spacing.lg,
+  },
+  moodPickerTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.semibold,
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  moodGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    justifyContent: 'center',
+  },
+  moodItem: {
+    alignItems: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surfaceSecondary,
+    width: '30%',
+  },
+  moodItemSelected: {
+    backgroundColor: '#E0F7F5',
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  moodLabel: {
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    marginTop: Spacing.xs,
+  },
+  tagInputModal: {
+    backgroundColor: Colors.white,
+    marginHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    width: '90%',
+    maxWidth: 400,
+  },
+  tagInputTitle: {
+    fontSize: FontSizes.lg,
+    fontWeight: FontWeights.semibold,
+    color: Colors.text,
+    marginBottom: Spacing.md,
+  },
+  tagTextInput: {
+    fontSize: FontSizes.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    color: Colors.text,
+  },
+  tagInputButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: Spacing.sm,
+  },
+  tagInputCancel: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+  },
+  tagInputCancelText: {
+    fontSize: FontSizes.md,
+    color: Colors.textSecondary,
+  },
+  tagInputAdd: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+  },
+  tagInputAddText: {
+    fontSize: FontSizes.md,
+    color: Colors.white,
+    fontWeight: FontWeights.medium,
   },
   fullScreenContainer: {
     flex: 1,

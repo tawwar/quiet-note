@@ -21,8 +21,6 @@ import {
   X,
   Hash,
   Smile,
-  Image as ImageIcon,
-  Mic,
   Camera,
   Images,
   Frown,
@@ -77,7 +75,6 @@ export default function NewEntryScreen() {
   const [isContentFocused, setIsContentFocused] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
-  // Track keyboard visibility
   useEffect(() => {
     const showSubscription = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -247,7 +244,7 @@ export default function NewEntryScreen() {
   );
 
   const renderContent = () => (
-    <>
+    <View style={styles.mainContainer}>
       <View style={styles.header}>
         <Pressable onPress={handleCancel}>
           <Text style={styles.cancelText}>Cancel</Text>
@@ -292,7 +289,7 @@ export default function NewEntryScreen() {
         </View>
       )}
 
-      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
+      <View style={styles.titleContainer}>
         <TextInput
           style={styles.titleInput}
           placeholder="Title your day..."
@@ -301,48 +298,42 @@ export default function NewEntryScreen() {
           onChangeText={setTitle}
           multiline
         />
+      </View>
 
+      <View style={styles.editorContainer}>
         <RichTextEditor
           ref={editorRef}
           placeholder="What's on your mind today? Start writing..."
           onChangeState={setStylesState}
           onFocus={() => setIsContentFocused(true)}
           onBlur={() => setIsContentFocused(false)}
-          style={styles.contentInput}
         />
+      </View>
 
-        {mediaItems.length > 0 && (
-          <View style={styles.mediaGrid}>
-            {mediaItems.map((item, index) => (
-              <View key={index} style={styles.mediaItem}>
-                <Image source={{ uri: item.uri }} style={styles.mediaImage} />
-                {item.type === 'video' && (
-                  <View style={styles.videoOverlay}>
-                    <Play size={24} color={Colors.white} fill={Colors.white} />
-                  </View>
-                )}
-                <Pressable style={styles.removeMediaButton} onPress={() => handleRemoveMedia(index)}>
-                  <X size={16} color={Colors.white} />
-                </Pressable>
-              </View>
-            ))}
-          </View>
-        )}
-
-        <View style={{ height: 200 }} />
-      </ScrollView>
-
-      {/* <View style={styles.bottomToolbar}>
-        <Pressable style={styles.toolButton} onPress={() => setShowFabMenu(true)}>
-          <ImageIcon size={22} color={Colors.text} />
-        </Pressable>
-        <Pressable style={styles.toolButton}>
-          <Mic size={22} color={Colors.text} />
-        </Pressable>
-      </View> */}
+      {mediaItems.length > 0 && (
+        <ScrollView 
+          horizontal 
+          style={styles.mediaScrollView}
+          showsHorizontalScrollIndicator={true}
+        >
+          {mediaItems.map((item, index) => (
+            <View key={index} style={styles.mediaItem}>
+              <Image source={{ uri: item.uri }} style={styles.mediaImage} />
+              {item.type === 'video' && (
+                <View style={styles.videoOverlay}>
+                  <Play size={24} color={Colors.white} fill={Colors.white} />
+                </View>
+              )}
+              <Pressable style={styles.removeMediaButton} onPress={() => handleRemoveMedia(index)}>
+                <X size={16} color={Colors.white} />
+              </Pressable>
+            </View>
+          ))}
+        </ScrollView>
+      )}
 
       <FAB onPress={() => setShowFabMenu(true)} style={styles.fab} />
-    </>
+    </View>
   );
 
   return (
@@ -355,7 +346,7 @@ export default function NewEntryScreen() {
           </InputAccessoryView>
         </>
       ) : (
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+        <KeyboardAvoidingView style={styles.keyboardAvoid} behavior="padding">
           {renderContent()}
           {showToolbar && renderToolbar()}
         </KeyboardAvoidingView>
@@ -466,6 +457,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  mainContainer: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -550,39 +547,41 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.text,
   },
-  content: {
-    flex: 1,
+  titleContainer: {
     paddingHorizontal: Spacing.lg,
   },
   titleInput: {
     fontSize: 28,
     fontWeight: FontWeights.bold,
     color: Colors.text,
-    marginBottom: Spacing.md,
     paddingVertical: Spacing.sm,
   },
-  contentInput: {
-    minHeight: 150,
+  editorContainer: {
+    flex: 1,
+    paddingHorizontal: Spacing.lg,
   },
-  mediaGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginTop: Spacing.lg,
+  mediaScrollView: {
+    maxHeight: 120,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
   },
   mediaItem: {
-    width: '48%',
-    aspectRatio: 1,
+    width: 100,
+    height: 100,
     borderRadius: BorderRadius.md,
     overflow: 'hidden',
-    position: 'relative',
+    marginRight: Spacing.sm,
   },
   mediaImage: {
     width: '100%',
     height: '100%',
   },
   videoOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -591,29 +590,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: Spacing.xs,
     right: Spacing.xs,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  bottomToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    backgroundColor: Colors.white,
-    gap: Spacing.md,
-  },
-  toolButton: {
-    padding: Spacing.sm,
-  },
   fab: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 24,
     right: 24,
   },
   modalOverlay: {
