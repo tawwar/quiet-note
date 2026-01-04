@@ -63,7 +63,7 @@ const INPUT_ACCESSORY_VIEW_ID = 'editRichTextToolbar';
 export default function EntryEditorScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getEntryById, updateEntry, getEntryMedia, deleteMedia } = useDatabase();
+  const { getEntryById, updateEntry, getEntryMedia, deleteMedia, addMedia } = useDatabase();
   const editorRef = useRef<RichTextEditorRef>(null);
 
   const [title, setTitle] = useState('');
@@ -172,6 +172,18 @@ export default function EntryEditorScreen() {
         mood,
         tags: tags.length > 0 ? JSON.stringify(tags) : null,
       });
+
+      // Save new media items (those without an id)
+      const newMediaItems = mediaItems.filter((item) => !item.id);
+      for (let i = 0; i < newMediaItems.length; i++) {
+        const item = newMediaItems[i];
+        await addMedia({
+          entryId: id,
+          type: item.type,
+          uri: item.uri,
+          order: mediaItems.indexOf(item),
+        });
+      }
     }
     router.back();
   };
