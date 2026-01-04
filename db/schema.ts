@@ -13,6 +13,7 @@ export const journalEntries = sqliteTable('journal_entries', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
   content: text('content'),
+  contentHtml: text('content_html'),
   mood: text('mood'),
   weather: text('weather'),
   location: text('location'),

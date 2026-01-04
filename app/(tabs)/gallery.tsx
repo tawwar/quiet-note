@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,9 +10,9 @@ import {
     Modal,
     Dimensions,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import {
     Image as ImageIcon,
     Video as VideoIcon,
@@ -31,10 +31,48 @@ const PAGE_SIZE = 10;
 
 type FilterType = 'all' | 'image' | 'video';
 
+// Video thumbnail component with its own player
+function VideoThumbnail({ uri }: { uri: string }) {
+    const player = useVideoPlayer(uri, (p) => {
+        p.loop = false;
+        p.muted = true;
+    });
+
+    return (
+        <View style={styles.videoThumbnailContainer}>
+            <VideoView
+                player={player}
+                style={styles.thumbnail}
+                nativeControls={false}
+                contentFit="cover"
+            />
+            <View style={styles.playIconOverlay}>
+                <Play size={20} color={Colors.white} fill={Colors.white} />
+            </View>
+        </View>
+    );
+}
+
+// Fullscreen video component
+function FullscreenVideo({ uri }: { uri: string }) {
+    const player = useVideoPlayer(uri, (p) => {
+        p.loop = true;
+        p.play();
+    });
+
+    return (
+        <VideoView
+            player={player}
+            style={styles.fullScreenVideo}
+            nativeControls
+            contentFit="contain"
+        />
+    );
+}
+
 export default function GalleryScreen() {
     const router = useRouter();
     const { getPagedMedia } = useDatabase();
-    const insets = useSafeAreaInsets();
 
     const [mediaItems, setMediaItems] = useState<schema.EntryMedia[]>([]);
     const [loading, setLoading] = useState(false);
@@ -68,7 +106,6 @@ export default function GalleryScreen() {
     };
 
     useEffect(() => {
-        // Initial load when filter changes
         setPage(0);
         setHasMore(true);
         fetchMedia(0, filter, true);
@@ -80,10 +117,6 @@ export default function GalleryScreen() {
         }
     };
 
-    const handleEntryPress = (entryId: string) => {
-        router.push(`/entry/${entryId}`);
-    };
-
     const renderItem = ({ item }: { item: schema.EntryMedia }) => (
         <Pressable
             style={styles.mediaItem}
@@ -91,18 +124,7 @@ export default function GalleryScreen() {
         >
             <View style={styles.mediaContainer}>
                 {item.type === 'video' ? (
-                    <View style={styles.videoThumbnailContainer}>
-                        <Video
-                            source={{ uri: item.uri }}
-                            style={styles.thumbnail}
-                            resizeMode={ResizeMode.COVER}
-                            shouldPlay={false}
-                            isMuted={true}
-                        />
-                        <View style={styles.playIconOverlay}>
-                            <Play size={20} color={Colors.white} fill={Colors.white} />
-                        </View>
-                    </View>
+                    <VideoThumbnail uri={item.uri} />
                 ) : (
                     <Image source={{ uri: item.uri }} style={styles.thumbnail} />
                 )}
@@ -179,14 +201,7 @@ export default function GalleryScreen() {
                     </Pressable>
                     <View style={styles.fullScreenContent}>
                         {fullScreenMedia?.type === 'video' ? (
-                            <Video
-                                source={{ uri: fullScreenMedia.uri }}
-                                style={styles.fullScreenVideo}
-                                useNativeControls
-                                resizeMode={ResizeMode.CONTAIN}
-                                shouldPlay
-                                isLooping
-                            />
+                            <FullscreenVideo uri={fullScreenMedia.uri} />
                         ) : (
                             <Image
                                 source={{ uri: fullScreenMedia?.uri }}

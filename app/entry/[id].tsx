@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,29 +9,27 @@ import {
   Image,
   Modal,
   Platform,
-  TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  InputAccessoryView,
+  Keyboard,
 } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import {
   X,
-  Type,
-  CheckSquare,
   Image as ImageIcon,
-  Grid3X3,
   Mic,
   MapPin,
   Sun,
   Smile,
-  Plus,
-  Trash2,
   Play,
 } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSizes, FontWeights } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
-import MoodIcon from '@/components/MoodIcon';
+import RichTextEditor, { RichTextEditorRef } from '@/components/RichTextEditor';
+import FormattingToolbar from '@/components/FormattingToolbar';
+import type { OnChangeStateEvent } from 'react-native-enriched';
 
 interface ChecklistItemType {
   id: string;
@@ -39,30 +37,16 @@ interface ChecklistItemType {
   isCompleted: boolean;
 }
 
-const sampleEntry = {
-  id: '1',
-  title: 'Finding peace in chaos',
-  content: "Today started with a rush, but I managed to carve out some time for myself. The city feels different when you actually stop to look at it instead of just rushing through.",
-  mood: 'happy',
-  weather: 'sunny',
-  location: 'Central Park',
-  createdAt: '2023-10-24T10:42:00',
-  image: 'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=800',
-  imageCaption: 'Morning Coffee',
-  imageTime: '9:30 AM',
-  checklist: [
-    { id: '1', text: 'Grocery run for dinner', isCompleted: false },
-    { id: '2', text: 'Call Mom', isCompleted: true },
-  ],
-};
+const INPUT_ACCESSORY_VIEW_ID = 'editRichTextToolbar';
 
 export default function EntryEditorScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getEntryById, updateEntry, getEntryMedia, getChecklistItems } = useDatabase();
+  const editorRef = useRef<RichTextEditorRef>(null);
 
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [contentHtml, setContentHtml] = useState<string>('');
   const [mood, setMood] = useState<string | null>(null);
   const [weather, setWeather] = useState<string | null>(null);
   const [location, setLocation] = useState<string | null>(null);
@@ -70,37 +54,73 @@ export default function EntryEditorScreen() {
   const [media, setMedia] = useState<any[]>([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [fullScreenMedia, setFullScreenMedia] = useState<{ uri: string; type: string } | null>(null);
+  const [stylesState, setStylesState] = useState<OnChangeStateEvent | null>(null);
+  const [isContentFocused, setIsContentFocused] = useState(false);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   const isNewEntry = id === 'new';
+
+  // Track keyboard visibility
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setIsKeyboardVisible(true)
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setIsKeyboardVisible(false)
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const showToolbar = isContentFocused && isKeyboardVisible;
+
+  // Video player for thumbnail
+  const thumbnailPlayer = useVideoPlayer(
+    media.length > 0 && media[0].type === 'video' ? media[0].uri : null,
+    (player) => {
+      player.loop = false;
+      player.muted = true;
+    }
+  );
+
+  // Video player for fullscreen
+  const fullscreenPlayer = useVideoPlayer(
+    fullScreenMedia?.type === 'video' ? fullScreenMedia.uri : null,
+    (player) => {
+      player.loop = true;
+      player.play();
+    }
+  );
 
   useEffect(() => {
     if (!isNewEntry && id) {
       loadEntry();
-    } else {
-      setTitle(sampleEntry.title);
-      setContent(sampleEntry.content);
-      setMood(sampleEntry.mood);
-      setWeather(sampleEntry.weather);
-      setLocation(sampleEntry.location);
-      setChecklist(sampleEntry.checklist);
-      setMedia([{
-        id: '1',
-        uri: sampleEntry.image,
-        caption: sampleEntry.imageCaption,
-        time: sampleEntry.imageTime,
-      }]);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (isLoaded && contentHtml && editorRef.current) {
+      editorRef.current.setHtml(contentHtml);
+    }
+  }, [isLoaded, contentHtml]);
 
   const loadEntry = async () => {
     if (id && id !== 'new') {
       const entry = await getEntryById(id);
       if (entry) {
         setTitle(entry.title);
-        setContent(entry.content || '');
+        setContentHtml(entry.contentHtml || entry.content || '');
         setMood(entry.mood);
         setWeather(entry.weather);
         setLocation(entry.location);
+        setCreatedAt(entry.createdAt);
 
         const entryMedia = await getEntryMedia(id);
         setMedia(entryMedia);
@@ -111,27 +131,32 @@ export default function EntryEditorScreen() {
           text: item.text,
           isCompleted: item.isCompleted || false,
         })));
+        
+        setIsLoaded(true);
       }
     }
   };
 
-  const now = new Date(sampleEntry.createdAt);
-  const dateStr = now.toLocaleDateString('en-US', {
+  const displayDate = createdAt ? new Date(createdAt) : new Date();
+  const dateStr = displayDate.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
   });
-  const timeStr = now.toLocaleTimeString('en-US', {
+  const timeStr = displayDate.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   });
 
   const handleSave = async () => {
+    const html = await editorRef.current?.getHtml();
+    
     if (id && id !== 'new') {
       await updateEntry(id, {
         title,
-        content,
+        content: html?.replace(/<[^>]*>/g, '') || '',
+        contentHtml: html || null,
         mood,
         weather,
         location,
@@ -164,8 +189,31 @@ export default function EntryEditorScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+  const openFullScreen = (uri: string, type: string) => {
+    setFullScreenMedia({ uri, type });
+  };
+
+  const closeFullScreen = () => {
+    if (fullscreenPlayer) {
+      fullscreenPlayer.pause();
+    }
+    setFullScreenMedia(null);
+  };
+
+  const renderToolbar = () => (
+    <FormattingToolbar
+      stylesState={stylesState}
+      onBold={() => editorRef.current?.toggleBold()}
+      onItalic={() => editorRef.current?.toggleItalic()}
+      onUnderline={() => editorRef.current?.toggleUnderline()}
+      onStrikethrough={() => editorRef.current?.toggleStrikethrough()}
+      onBulletList={() => editorRef.current?.toggleBulletList()}
+      onOrderedList={() => editorRef.current?.toggleOrderedList()}
+    />
+  );
+
+  const renderContent = () => (
+    <>
       <View style={styles.header}>
         <Pressable onPress={handleClose} style={styles.closeButton}>
           <X size={24} color={Colors.text} />
@@ -212,29 +260,27 @@ export default function EntryEditorScreen() {
           )}
         </View>
 
-        <TextInput
-          style={styles.contentInput}
+        <RichTextEditor
+          ref={editorRef}
           placeholder="What's on your mind today? Start writing..."
-          placeholderTextColor={Colors.textTertiary}
-          value={content}
-          onChangeText={setContent}
-          multiline
-          textAlignVertical="top"
+          onChangeState={setStylesState}
+          onFocus={() => setIsContentFocused(true)}
+          onBlur={() => setIsContentFocused(false)}
+          style={styles.contentInput}
         />
 
         {media.length > 0 && media[0].uri && (
           <Pressable
             style={styles.mediaContainer}
-            onPress={() => setFullScreenMedia({ uri: media[0].uri, type: media[0].type || 'image' })}
+            onPress={() => openFullScreen(media[0].uri, media[0].type || 'image')}
           >
             {media[0].type === 'video' ? (
               <View style={styles.videoThumbnailContainer}>
-                <Video
-                  source={{ uri: media[0].uri }}
+                <VideoView
+                  player={thumbnailPlayer}
                   style={styles.mediaImage}
-                  resizeMode={ResizeMode.COVER}
-                  shouldPlay={false}
-                  isMuted={true}
+                  nativeControls={false}
+                  contentFit="cover"
                 />
                 <View style={styles.playIconOverlay}>
                   <Play size={32} color={Colors.white} fill={Colors.white} />
@@ -244,10 +290,10 @@ export default function EntryEditorScreen() {
               <Image source={{ uri: media[0].uri }} style={styles.mediaImage} />
             )}
 
-            {(media[0].caption || media[0].time) && (
+            {(media[0].caption || media[0].timestamp) && (
               <View style={styles.mediaCaptionContainer}>
                 <Text style={styles.mediaCaption}>
-                  {media[0].caption} {media[0].time && `• ${media[0].time}`}
+                  {media[0].caption} {media[0].timestamp && `• ${media[0].timestamp}`}
                 </Text>
               </View>
             )}
@@ -298,43 +344,50 @@ export default function EntryEditorScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      <View style={styles.toolbar}>
-        <Pressable style={styles.toolButton}>
-          <Type size={22} color={Colors.text} />
-        </Pressable>
-        <Pressable style={[styles.toolButton, styles.toolButtonActive]}>
-          <CheckSquare size={22} color={Colors.primary} />
-        </Pressable>
+      {/* <View style={styles.bottomToolbar}>
         <Pressable style={styles.toolButton}>
           <ImageIcon size={22} color={Colors.text} />
         </Pressable>
         <Pressable style={styles.toolButton}>
-          <Grid3X3 size={22} color={Colors.text} />
-        </Pressable>
-        <Pressable style={styles.toolButton}>
           <Mic size={22} color={Colors.text} />
         </Pressable>
-      </View>
+      </View> */}
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {Platform.OS === 'ios' ? (
+        <>
+          {renderContent()}
+          <InputAccessoryView nativeID={INPUT_ACCESSORY_VIEW_ID}>
+            {showToolbar && renderToolbar()}
+          </InputAccessoryView>
+        </>
+      ) : (
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          {renderContent()}
+          {showToolbar && renderToolbar()}
+        </KeyboardAvoidingView>
+      )}
 
       <Modal
         visible={!!fullScreenMedia}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setFullScreenMedia(null)}
+        onRequestClose={closeFullScreen}
       >
         <View style={styles.fullScreenContainer}>
-          <Pressable style={styles.fullScreenCloseButton} onPress={() => setFullScreenMedia(null)}>
+          <Pressable style={styles.fullScreenCloseButton} onPress={closeFullScreen}>
             <X size={30} color={Colors.white} />
           </Pressable>
           <View style={styles.fullScreenContent}>
             {fullScreenMedia?.type === 'video' ? (
-              <Video
-                source={{ uri: fullScreenMedia.uri }}
+              <VideoView
+                player={fullscreenPlayer}
                 style={styles.fullScreenVideo}
-                useNativeControls
-                resizeMode={ResizeMode.CONTAIN}
-                shouldPlay
-                isLooping
+                nativeControls
+                contentFit="contain"
               />
             ) : (
               <Image
@@ -346,7 +399,7 @@ export default function EntryEditorScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView >
+    </SafeAreaView>
   );
 }
 
@@ -429,9 +482,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   contentInput: {
-    fontSize: FontSizes.md,
-    color: Colors.text,
-    lineHeight: 26,
     marginBottom: Spacing.lg,
   },
   mediaContainer: {
@@ -507,22 +557,18 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     paddingVertical: Spacing.md,
   },
-  toolbar: {
+  bottomToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
     backgroundColor: Colors.white,
+    gap: Spacing.md,
   },
   toolButton: {
-    padding: Spacing.md,
-    borderRadius: BorderRadius.full,
-  },
-  toolButtonActive: {
-    backgroundColor: Colors.surfaceSecondary,
+    padding: Spacing.sm,
   },
   videoThumbnailContainer: {
     width: '100%',

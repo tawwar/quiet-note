@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,9 @@ import {
   Platform,
   Image,
   Alert,
+  KeyboardAvoidingView,
+  InputAccessoryView,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,9 +21,6 @@ import {
   X,
   Hash,
   Smile,
-  Bold,
-  Italic,
-  List,
   Image as ImageIcon,
   Mic,
   Camera,
@@ -33,9 +33,12 @@ import {
   Meh,
   Play,
 } from 'lucide-react-native';
-import { Colors, Spacing, BorderRadius, FontSizes, FontWeights, Shadows } from '@/constants/theme';
+import { Colors, Spacing, BorderRadius, FontSizes, FontWeights } from '@/constants/theme';
 import { useDatabase } from '@/context/DatabaseContext';
 import FAB from '@/components/FAB';
+import RichTextEditor, { RichTextEditorRef } from '@/components/RichTextEditor';
+import FormattingToolbar from '@/components/FormattingToolbar';
+import type { OnChangeStateEvent } from 'react-native-enriched';
 
 interface MediaItem {
   uri: string;
@@ -55,11 +58,14 @@ const moods = [
   { id: 'neutral', label: 'Neutral', icon: Meh, color: '#9CA3AF' },
 ];
 
+const INPUT_ACCESSORY_VIEW_ID = 'richTextToolbar';
+
 export default function NewEntryScreen() {
   const router = useRouter();
   const { createEntry, addMedia } = useDatabase();
+  const editorRef = useRef<RichTextEditorRef>(null);
+  
   const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [mood, setMood] = useState<string | null>(null);
   const [showFabMenu, setShowFabMenu] = useState(false);
@@ -67,6 +73,28 @@ export default function NewEntryScreen() {
   const [showTagInput, setShowTagInput] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [stylesState, setStylesState] = useState<OnChangeStateEvent | null>(null);
+  const [isContentFocused, setIsContentFocused] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  // Track keyboard visibility
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setIsKeyboardVisible(true)
+    );
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setIsKeyboardVisible(false)
+    );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const showToolbar = isContentFocused && isKeyboardVisible;
 
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-US', {
@@ -83,13 +111,16 @@ export default function NewEntryScreen() {
   const selectedMood = moods.find((m) => m.id === mood);
 
   const handleSave = async () => {
-    if (!title.trim() && !content.trim() && mediaItems.length === 0) {
+    const contentHtml = await editorRef.current?.getHtml();
+    
+    if (!title.trim() && !contentHtml?.trim() && mediaItems.length === 0) {
       return;
     }
 
     const entryId = await createEntry({
       title: title.trim() || 'Untitled Entry',
-      content: content.trim(),
+      content: contentHtml?.replace(/<[^>]*>/g, '') || '', // Plain text fallback
+      contentHtml: contentHtml || null,
       mood,
       tags: tags.length > 0 ? JSON.stringify(tags) : null,
     });
@@ -100,9 +131,6 @@ export default function NewEntryScreen() {
         entryId,
         type: item.type,
         uri: item.uri,
-        width: item.width || null,
-        height: item.height || null,
-        duration: item.duration || null,
         order: i,
       });
     }
@@ -206,8 +234,20 @@ export default function NewEntryScreen() {
     setMediaItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+  const renderToolbar = () => (
+    <FormattingToolbar
+      stylesState={stylesState}
+      onBold={() => editorRef.current?.toggleBold()}
+      onItalic={() => editorRef.current?.toggleItalic()}
+      onUnderline={() => editorRef.current?.toggleUnderline()}
+      onStrikethrough={() => editorRef.current?.toggleStrikethrough()}
+      onBulletList={() => editorRef.current?.toggleBulletList()}
+      onOrderedList={() => editorRef.current?.toggleOrderedList()}
+    />
+  );
+
+  const renderContent = () => (
+    <>
       <View style={styles.header}>
         <Pressable onPress={handleCancel}>
           <Text style={styles.cancelText}>Cancel</Text>
@@ -262,14 +302,13 @@ export default function NewEntryScreen() {
           multiline
         />
 
-        <TextInput
-          style={styles.contentInput}
+        <RichTextEditor
+          ref={editorRef}
           placeholder="What's on your mind today? Start writing..."
-          placeholderTextColor={Colors.textTertiary}
-          value={content}
-          onChangeText={setContent}
-          multiline
-          textAlignVertical="top"
+          onChangeState={setStylesState}
+          onFocus={() => setIsContentFocused(true)}
+          onBlur={() => setIsContentFocused(false)}
+          style={styles.contentInput}
         />
 
         {mediaItems.length > 0 && (
@@ -293,26 +332,34 @@ export default function NewEntryScreen() {
         <View style={{ height: 200 }} />
       </ScrollView>
 
-      <View style={styles.toolbar}>
-        <Pressable style={styles.toolButton}>
-          <Bold size={22} color={Colors.text} />
-        </Pressable>
-        <Pressable style={styles.toolButton}>
-          <Italic size={22} color={Colors.text} />
-        </Pressable>
-        <Pressable style={styles.toolButton}>
-          <List size={22} color={Colors.text} />
-        </Pressable>
+      {/* <View style={styles.bottomToolbar}>
         <Pressable style={styles.toolButton} onPress={() => setShowFabMenu(true)}>
           <ImageIcon size={22} color={Colors.text} />
         </Pressable>
-        <View style={styles.toolDivider} />
         <Pressable style={styles.toolButton}>
           <Mic size={22} color={Colors.text} />
         </Pressable>
-      </View>
+      </View> */}
 
       <FAB onPress={() => setShowFabMenu(true)} style={styles.fab} />
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {Platform.OS === 'ios' ? (
+        <>
+          {renderContent()}
+          <InputAccessoryView nativeID={INPUT_ACCESSORY_VIEW_ID}>
+            {showToolbar && renderToolbar()}
+          </InputAccessoryView>
+        </>
+      ) : (
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          {renderContent()}
+          {showToolbar && renderToolbar()}
+        </KeyboardAvoidingView>
+      )}
 
       <Modal
         visible={showFabMenu}
@@ -515,9 +562,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
   },
   contentInput: {
-    fontSize: FontSizes.md,
-    color: Colors.textSecondary,
-    lineHeight: 24,
     minHeight: 150,
   },
   mediaGrid: {
@@ -554,7 +598,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  toolbar: {
+  bottomToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
@@ -562,16 +606,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
     backgroundColor: Colors.white,
+    gap: Spacing.md,
   },
   toolButton: {
     padding: Spacing.sm,
-    marginRight: Spacing.sm,
-  },
-  toolDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: Colors.border,
-    marginHorizontal: Spacing.md,
   },
   fab: {
     position: 'absolute',

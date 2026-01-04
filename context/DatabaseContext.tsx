@@ -144,7 +144,14 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
   const createEntry = async (entry: Omit<schema.NewJournalEntry, 'id' | 'createdAt' | 'updatedAt'>) => {
     const id = Crypto.randomUUID();
     const now = new Date().toISOString();
-    const newEntry = { ...entry, id, createdAt: now, updatedAt: now, isFavorite: false };
+    const newEntry = { 
+      ...entry, 
+      id, 
+      createdAt: now, 
+      updatedAt: now, 
+      isFavorite: false,
+      contentHtml: entry.contentHtml || null,
+    };
 
     if (isWeb) {
       const updatedEntries = [newEntry as schema.JournalEntry, ...entries];
