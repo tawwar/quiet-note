@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 import {
   User,
   Bell,
@@ -70,12 +71,36 @@ export default function SettingsScreen() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `journal-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `quiet-note-export-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       Alert.alert('Export Complete', 'Your journal data has been downloaded.');
+    } else if (Platform.OS === 'android') {
+      try {
+        const SAF = (FileSystem as any).StorageAccessFramework;
+        const permissions = await SAF.requestDirectoryPermissionsAsync();
+
+        if (permissions.granted) {
+          const fileName = `quiet-note-export-${new Date().toISOString().split('T')[0]}.json`;
+
+          const uri = await SAF.createFileAsync(
+            permissions.directoryUri,
+            fileName,
+            'application/json'
+          );
+
+          await FileSystem.writeAsStringAsync(uri, jsonString, {
+            encoding: (FileSystem as any).EncodingType.UTF8
+          });
+
+          Alert.alert('Export Complete', `Data saved successfully to your device as ${fileName}`);
+        }
+      } catch (error) {
+        console.error('Export error:', error);
+        Alert.alert('Export Failed', 'An error occurred while exporting your data. Please try again.');
+      }
     } else {
       Alert.alert(
         'Export Data',
