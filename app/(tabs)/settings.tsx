@@ -173,32 +173,32 @@ export default function SettingsScreen() {
         // },
       ],
     },
-    {
-      title: 'Data',
-      items: [
-        {
-          icon: Download,
-          label: 'Export Journal',
-          subtitle: `${entries.length} entries, ${albums.length} albums`,
-          onPress: handleExportData,
-        },
-        {
-          icon: Shield,
-          label: 'Auto Backup',
-          subtitle: autoBackup ? 'Enabled' : 'Disabled',
-          toggle: true,
-          value: autoBackup,
-          onToggle: setAutoBackup,
-        },
-        {
-          icon: Trash2,
-          label: 'Clear All Data',
-          subtitle: 'Delete all journal data',
-          danger: true,
-          onPress: () => setShowDeleteModal(true),
-        },
-      ],
-    },
+    // {
+    //   title: 'Data',
+    //   items: [
+    //     // {
+    //     //   icon: Download,
+    //     //   label: 'Export Journal',
+    //     //   subtitle: `${entries.length} entries, ${albums.length} albums`,
+    //     //   onPress: handleExportData,
+    //     // },
+    //     // {
+    //     //   icon: Shield,
+    //     //   label: 'Auto Backup',
+    //     //   subtitle: autoBackup ? 'Enabled' : 'Disabled',
+    //     //   toggle: true,
+    //     //   value: autoBackup,
+    //     //   onToggle: setAutoBackup,
+    //     // },
+    //     // {
+    //     //   icon: Trash2,
+    //     //   label: 'Clear All Data',
+    //     //   subtitle: 'Delete all journal data',
+    //     //   danger: true,
+    //     //   onPress: () => setShowDeleteModal(true),
+    //     // },
+    //   ],
+    // },
     {
       title: 'Support',
       items: [
