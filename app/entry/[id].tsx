@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   InputAccessoryView,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -46,7 +47,7 @@ export default function EntryEditorScreen() {
   const editorRef = useRef<RichTextEditorRef>(null);
 
   const [title, setTitle] = useState('');
-  const [contentHtml, setContentHtml] = useState<string>('');
+  const [content, setContent] = useState<string>('');
   const [mood, setMood] = useState<string | null>(null);
   const [weather, setWeather] = useState<string | null>(null);
   const [location, setLocation] = useState<string | null>(null);
@@ -106,17 +107,17 @@ export default function EntryEditorScreen() {
   }, [id]);
 
   useEffect(() => {
-    if (isLoaded && contentHtml && editorRef.current) {
-      editorRef.current.setHtml(contentHtml);
+    if (isLoaded && content && editorRef.current) {
+      editorRef.current.setHtml(content);
     }
-  }, [isLoaded, contentHtml]);
+  }, [isLoaded, content]);
 
   const loadEntry = async () => {
     if (id && id !== 'new') {
       const entry = await getEntryById(id);
       if (entry) {
         setTitle(entry.title);
-        setContentHtml(entry.contentHtml || entry.content || '');
+        setContent(entry.content || '');
         setMood(entry.mood);
         setWeather(entry.weather);
         setLocation(entry.location);
@@ -150,13 +151,17 @@ export default function EntryEditorScreen() {
   });
 
   const handleSave = async () => {
+    if (!title.trim()) {
+      Alert.alert('Title Required', 'Please add a title for your entry before saving.');
+      return;
+    }
+    
     const html = await editorRef.current?.getHtml();
     
     if (id && id !== 'new') {
       await updateEntry(id, {
-        title,
-        content: html?.replace(/<[^>]*>/g, '') || '',
-        contentHtml: html || null,
+        title: title.trim(),
+        content: html || null,
         mood,
         weather,
         location,

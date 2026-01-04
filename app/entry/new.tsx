@@ -111,16 +111,16 @@ export default function NewEntryScreen() {
   const selectedMood = moods.find((m) => m.id === mood);
 
   const handleSave = async () => {
-    const contentHtml = await editorRef.current?.getHtml();
-    
-    if (!title.trim() && !contentHtml?.trim() && mediaItems.length === 0) {
+    if (!title.trim()) {
+      Alert.alert('Title Required', 'Please add a title for your entry before saving.');
       return;
     }
+    
+    const contentHtml = await editorRef.current?.getHtml();
 
     const entryId = await createEntry({
-      title: title.trim() || 'Untitled Entry',
-      content: contentHtml?.replace(/<[^>]*>/g, '') || '', // Plain text fallback
-      contentHtml: contentHtml || null,
+      title: title.trim(),
+      content: contentHtml || null,
       mood,
       tags: tags.length > 0 ? JSON.stringify(tags) : null,
     });

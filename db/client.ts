@@ -70,7 +70,6 @@ export async function initializeDatabase() {
         id TEXT PRIMARY KEY,
         title TEXT NOT NULL,
         content TEXT,
-        content_html TEXT,
         mood TEXT,
         weather TEXT,
         location TEXT,
@@ -79,9 +78,6 @@ export async function initializeDatabase() {
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       );
-      
-      -- Migration: Add content_html column if it doesn't exist
-      ALTER TABLE journal_entries ADD COLUMN content_html TEXT;
 
       CREATE TABLE IF NOT EXISTS entry_media (
         id TEXT PRIMARY KEY,

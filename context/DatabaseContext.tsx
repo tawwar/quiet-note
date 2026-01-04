@@ -150,7 +150,6 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
       createdAt: now, 
       updatedAt: now, 
       isFavorite: false,
-      contentHtml: entry.contentHtml || null,
     };
 
     if (isWeb) {

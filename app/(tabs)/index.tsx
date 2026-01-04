@@ -22,6 +22,21 @@ import MoodIcon from '@/components/MoodIcon';
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const ENTRIES_PER_PAGE = 10;
 
+// Helper function to strip HTML tags for preview
+const stripHtmlTags = (html: string | null): string => {
+  if (!html) return '';
+  return html
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/&nbsp;/g, ' ') // Replace &nbsp; with space
+    .replace(/&amp;/g, '&')  // Replace &amp; with &
+    .replace(/&lt;/g, '<')   // Replace &lt; with <
+    .replace(/&gt;/g, '>')   // Replace &gt; with >
+    .replace(/&quot;/g, '"') // Replace &quot; with "
+    .replace(/&#39;/g, "'")  // Replace &#39; with '
+    .replace(/\s+/g, ' ')    // Collapse multiple spaces
+    .trim();
+};
+
 interface DisplayEntry {
   id: string;
   title: string;
@@ -374,7 +389,7 @@ export default function JournalTimelineScreen() {
                       </View>
 
                       <Text style={styles.entryContent} numberOfLines={2}>
-                        {entry.content}
+                        {stripHtmlTags(entry.content)}
                       </Text>
 
                       {'image' in entry && entry.image && (
@@ -514,7 +529,7 @@ export default function JournalTimelineScreen() {
                   </View>
                   {entry.content && (
                     <Text style={styles.searchResultContent} numberOfLines={2}>
-                      {entry.content}
+                      {stripHtmlTags(entry.content)}
                     </Text>
                   )}
                   {entry.tags && entry.tags.length > 0 && (
